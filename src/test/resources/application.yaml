@@ -1,0 +1,32 @@
+#
+# Copyright © 2013-2017, The SeedStack authors <http://seedstack.org>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+
+rest:
+  path: /api
+
+security:
+  realms: OAuthRealm
+  sessions:
+    enabled: true
+  web:
+    urls:
+      -
+        pattern: /callback
+        filters: oauthCallback
+      -
+        pattern: /api/**
+        filters: oauth
+  oauth:
+    endpoints:
+      authorization: https://accounts.google.com/o/oauth2/v2/auth
+      token: https://www.googleapis.com/oauth2/v4/token
+      redirect: http://localhost:8080/callback
+    scopes: [ openid, email ]
+    clientId: 234443717825-1naj3atg8ukniijp2k1fqur5op2ltemv.apps.googleusercontent.com
+    clientSecret: kPVNE7_4GQXzXZJJK7taVVhs
+    userInfoUrl: https://www.googleapis.com/oauth2/v3/userinfo
