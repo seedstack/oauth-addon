@@ -26,5 +26,5 @@ security:
     discoveryDocument: https://accounts.google.com/.well-known/openid-configuration
     redirect: http://localhost:8080/callback
     scopes: email
-#    clientId:
-#    clientSecret: 
+    clientId: ${env.clientId}
+    clientSecret: ${env.clientSecret}
