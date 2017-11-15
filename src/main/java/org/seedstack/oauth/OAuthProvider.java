@@ -8,6 +8,7 @@
 package org.seedstack.oauth;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 
 public interface OAuthProvider {
@@ -22,4 +23,8 @@ public interface OAuthProvider {
     Optional<URI> getUserInfoEndpoint();
 
     Optional<URI> getRevocationEndpoint();
+
+    List<String> getIdTokenSigningAlgValuesSupported();
+
+    URI getJwksUri();
 }
