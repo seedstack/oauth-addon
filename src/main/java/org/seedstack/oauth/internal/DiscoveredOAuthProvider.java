@@ -9,11 +9,14 @@ package org.seedstack.oauth.internal;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.nimbusds.openid.connect.sdk.OIDCScopeValue;
 import java.net.URI;
+//Added by JA
 import java.util.List;
 import java.util.Optional;
+
 import org.seedstack.oauth.OAuthProvider;
+
+import com.nimbusds.openid.connect.sdk.OIDCScopeValue;
 
 class DiscoveredOAuthProvider implements OAuthProvider {
     private final DiscoveryDocument oicDiscoveryDocument;
@@ -35,14 +38,12 @@ class DiscoveredOAuthProvider implements OAuthProvider {
 
     @Override
     public URI getAuthorizationEndpoint() {
-        return checkNotNull(oicDiscoveryDocument.getAuthorization_endpoint(),
-                "Authorization endpoint should not be null");
+        return checkNotNull(oicDiscoveryDocument.getAuthorization_endpoint(), "Authorization endpoint should not be null");
     }
 
     @Override
     public URI getTokenEndpoint() {
-        return checkNotNull(oicDiscoveryDocument.getToken_endpoint(),
-                "Token endpoint should not be null");
+        return checkNotNull(oicDiscoveryDocument.getToken_endpoint(), "Token endpoint should not be null");
     }
 
     @Override
@@ -53,5 +54,16 @@ class DiscoveredOAuthProvider implements OAuthProvider {
     @Override
     public Optional<URI> getRevocationEndpoint() {
         return Optional.ofNullable(oicDiscoveryDocument.getRevocation_endpoint());
+    }
+
+    @Override
+    public List<String> getIdTokenSigningAlgValuesSupported() {
+        return checkNotNull(oicDiscoveryDocument.getId_token_signing_alg_values_supported(), "Token signing algorithm should not be null");
+
+    }
+
+    @Override
+    public URI getJwksUri() {
+        return checkNotNull(oicDiscoveryDocument.getJwks_uri(), "Jwks uri should not be null");
     }
 }

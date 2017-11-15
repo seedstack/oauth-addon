@@ -7,19 +7,20 @@
  */
 package org.seedstack.oauth.internal;
 
+import java.util.List;
+
+import org.seedstack.oauth.OAuthProvider;
+import org.seedstack.oauth.TokenValidator;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
-import java.util.List;
-import org.seedstack.oauth.AccessTokenValidator;
-import org.seedstack.oauth.OAuthProvider;
 
 class OAuthModule extends AbstractModule {
     private final OAuthProvider oAuthProvider;
-    private final List<Class<? extends AccessTokenValidator<?>>> accessTokenValidatorClasses;
+    private final List<Class<? extends TokenValidator<?>>> accessTokenValidatorClasses;
 
-    OAuthModule(OAuthProvider oAuthProvider,
-            List<Class<? extends AccessTokenValidator<?>>> accessTokenValidatorClasses) {
+    OAuthModule(OAuthProvider oAuthProvider, List<Class<? extends TokenValidator<?>>> accessTokenValidatorClasses) {
         this.oAuthProvider = oAuthProvider;
         this.accessTokenValidatorClasses = accessTokenValidatorClasses;
     }
@@ -28,13 +29,12 @@ class OAuthModule extends AbstractModule {
     protected void configure() {
         bind(OAuthProvider.class).toInstance(oAuthProvider);
 
-        Multibinder<AccessTokenValidator<?>> multibinder = Multibinder.newSetBinder(
-                binder(),
-                new AccessTokenValidatorTypeLiteral());
-        for (Class<? extends AccessTokenValidator<?>> accessTokenValidatorClass : accessTokenValidatorClasses) {
+        Multibinder<TokenValidator<?>> multibinder = Multibinder.newSetBinder(binder(), new AccessTokenValidatorTypeLiteral());
+        for (Class<? extends TokenValidator<?>> accessTokenValidatorClass : accessTokenValidatorClasses) {
             multibinder.addBinding().to(accessTokenValidatorClass);
         }
     }
 
-    private static class AccessTokenValidatorTypeLiteral extends TypeLiteral<AccessTokenValidator<?>> {}
+    private static class AccessTokenValidatorTypeLiteral extends TypeLiteral<TokenValidator<?>> {
+    }
 }

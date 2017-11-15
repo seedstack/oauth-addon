@@ -10,7 +10,9 @@ package org.seedstack.oauth.internal;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
+
 import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.OAuthProvider;
 
@@ -33,14 +35,12 @@ class ManualOAuthProvider implements OAuthProvider {
 
     @Override
     public URI getAuthorizationEndpoint() {
-        return checkNotNull(providerConfig.getAuthorization(),
-                "Authorization endpoint should not be null");
+        return checkNotNull(providerConfig.getAuthorization(), "Authorization endpoint should not be null");
     }
 
     @Override
     public URI getTokenEndpoint() {
-        return checkNotNull(providerConfig.getToken(),
-                "Token endpoint should not be null");
+        return checkNotNull(providerConfig.getToken(), "Token endpoint should not be null");
     }
 
     @Override
@@ -51,5 +51,15 @@ class ManualOAuthProvider implements OAuthProvider {
     @Override
     public Optional<URI> getRevocationEndpoint() {
         return Optional.ofNullable(providerConfig.getRevocation());
+    }
+
+    @Override
+    public List<String> getIdTokenSigningAlgValuesSupported() {
+        return checkNotNull(providerConfig.getTokenSigningAlgValues(), "Token signing algorithm should not be null");
+    }
+
+    @Override
+    public URI getJwksUri() {
+        return checkNotNull(providerConfig.getJwksURI(), "Jwks uri should not be null");
     }
 }

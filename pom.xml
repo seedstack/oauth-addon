@@ -24,7 +24,7 @@
     <properties>
         <seed.version>3.4.0-SNAPSHOT</seed.version>
         <oauth2-oidc-sdk.version>5.38</oauth2-oidc-sdk.version>
-
+        <poms.version>3.1.1-SNAPSHOT</poms.version>
         <compatibility.skip>true</compatibility.skip>
 
         <bintray.package>oauth-addon</bintray.package>
@@ -125,6 +125,19 @@
             <version>${logback.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.seedstack.poms</groupId>
+            <artifactId>arquillian-composite</artifactId>
+            <version>${poms.version}</version>
+            <type>pom</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.jayway.restassured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>${rest-assured.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <scm>
@@ -157,7 +170,7 @@
                         <enabled>false</enabled>
                     </releases>
                     <id>ojo-libs-snapshot</id>
-                    <name>ojo-snapshots</name>
+                    <name>ojo-snapshts</name>
                     <url>https://oss.jfrog.org/artifactory/libs-snapshot</url>
                 </repository>
             </repositories>

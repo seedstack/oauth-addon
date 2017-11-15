@@ -7,8 +7,9 @@
  */
 package org.seedstack.oauth;
 
-public interface AccessTokenValidator<T> {
-    boolean supports(T accessToken);
+public interface TokenValidator<T> {
+    boolean supports(Class<?> token);
 
-    void validate(T accessToken) throws TokenValidationException;
+    void validate(T token) throws TokenValidationException;
+
 }
