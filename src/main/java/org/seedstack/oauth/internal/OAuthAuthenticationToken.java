@@ -8,53 +8,19 @@
 
 package org.seedstack.oauth.internal;
 
-import java.text.ParseException;
-import java.util.Optional;
-
-import org.apache.shiro.authc.AuthenticationToken;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.nimbusds.jwt.JWT;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
-import com.nimbusds.openid.connect.sdk.Nonce;
+import org.apache.shiro.authc.AuthenticationToken;
 
 public class OAuthAuthenticationToken implements AuthenticationToken, org.seedstack.seed.security.AuthenticationToken {
-    private static final Logger LOGGER = LoggerFactory.getLogger(OAuthAuthenticationToken.class);
-    private final JWT idToken;
     private final AccessToken accessToken;
-    private Nonce nonce;
-
-    public static Logger getLogger() {
-        return LOGGER;
-    }
-
-    public JWT getIdToken() {
-        return idToken;
-    }
-
-    public AccessToken getAccessToken() {
-        return accessToken;
-    }
-
-    public Optional<Nonce> getNonce() {
-        return Optional.ofNullable(nonce);
-    }
-
-    public OAuthAuthenticationToken(AccessToken accessToken, JWT idToken, Nonce nonce) {
-        this.idToken = idToken;
-        this.accessToken = accessToken;
-        this.nonce = nonce;
-    }
 
     public OAuthAuthenticationToken(AccessToken accessToken) {
-        this.idToken = null;
         this.accessToken = accessToken;
     }
 
     @Override
     public Object getPrincipal() {
-        return Optional.ofNullable(idToken);
+        return "";
     }
 
     @Override
@@ -63,20 +29,13 @@ public class OAuthAuthenticationToken implements AuthenticationToken, org.seedst
     }
 
     /**
-     * Returns a textual representation of the authentication token. The access token is omitted for security purposes. The identity is extracted from
-     * the subject (sub) claim but SHOULD NOT BE TRUSTED as the id token may NOT be validated at this stage.
+     * Returns a textual representation of the authentication token. The access token is omitted for security
+     * purposes. The identity is unknown.
      *
      * @return the textual representation as {@link String}.
      */
     @Override
     public String toString() {
-        if (idToken != null) {
-            try {
-                return "OAuthAuthenticationToken[" + idToken.getJWTClaimsSet().getSubject() + "]";
-            } catch (ParseException e) {
-                LOGGER.debug("Unable to parse JWT id token " + idToken.getParsedString());
-            }
-        }
-        return "OAuthAuthenticationToken";
+        return "OAuthAuthenticationToken[" + getPrincipal() + "]";
     }
 }

@@ -5,9 +5,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.oauth;
 
-public class TokenValidationException extends Exception {
+import org.seedstack.seed.security.AuthenticationException;
+
+public class TokenValidationException extends AuthenticationException {
     public TokenValidationException() {
         super();
     }
@@ -22,10 +25,5 @@ public class TokenValidationException extends Exception {
 
     public TokenValidationException(Throwable cause) {
         super(cause);
-    }
-
-    public TokenValidationException(String message, Throwable cause, boolean enableSuppression,
-            boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
     }
 }

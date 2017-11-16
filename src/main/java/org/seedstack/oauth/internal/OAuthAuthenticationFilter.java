@@ -11,16 +11,25 @@ package org.seedstack.oauth.internal;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.shiro.web.util.WebUtils.issueRedirect;
 
+import com.nimbusds.oauth2.sdk.AuthorizationRequest;
+import com.nimbusds.oauth2.sdk.ParseException;
+import com.nimbusds.oauth2.sdk.ResponseType;
+import com.nimbusds.oauth2.sdk.Scope;
+import com.nimbusds.oauth2.sdk.id.ClientID;
+import com.nimbusds.oauth2.sdk.id.State;
+import com.nimbusds.oauth2.sdk.token.AccessToken;
+import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
+import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
+import com.nimbusds.openid.connect.sdk.Nonce;
+import com.nimbusds.openid.connect.sdk.OIDCScopeValue;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
-
 import javax.inject.Inject;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -36,18 +45,6 @@ import org.seedstack.seed.web.security.internal.SessionRegenerationCapable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.nimbusds.oauth2.sdk.AuthorizationRequest;
-import com.nimbusds.oauth2.sdk.ParseException;
-import com.nimbusds.oauth2.sdk.ResponseType;
-import com.nimbusds.oauth2.sdk.Scope;
-import com.nimbusds.oauth2.sdk.id.ClientID;
-import com.nimbusds.oauth2.sdk.id.State;
-import com.nimbusds.oauth2.sdk.token.AccessToken;
-import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
-import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
-import com.nimbusds.openid.connect.sdk.Nonce;
-import com.nimbusds.openid.connect.sdk.OIDCScopeValue;
-
 @SecurityFilter("oauth")
 public class OAuthAuthenticationFilter extends AuthenticatingFilter implements SessionRegenerationCapable {
     static final String STATE_KEY = "org.seedstack.oauth.OAuthState";
@@ -55,14 +52,15 @@ public class OAuthAuthenticationFilter extends AuthenticatingFilter implements S
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuthAuthenticationFilter.class);
     private static final String AUTHORIZATION = "Authorization";
     @Inject
-    private OAuthProvider oAuthProvider;
+    private OAuthProvider oauthProvider;
     @Configuration
-    private OAuthConfig oAuthConfig;
+    private OAuthConfig oauthConfig;
 
     @Override
     protected AuthenticationToken createToken(ServletRequest request, ServletResponse response) throws Exception {
         return new OAuthAuthenticationToken(
-                resolveAccessToken(WebUtils.toHttp(request)).orElseThrow(() -> new AuthenticationException("Missing access token")));
+                resolveAccessToken(WebUtils.toHttp(request))
+                        .orElseThrow(() -> new AuthenticationException("Missing access token")));
     }
 
     private Optional<AccessToken> resolveAccessToken(HttpServletRequest request) throws ParseException {
@@ -93,7 +91,8 @@ public class OAuthAuthenticationFilter extends AuthenticatingFilter implements S
     }
 
     @Override
-    protected boolean onLoginSuccess(AuthenticationToken token, Subject subject, ServletRequest request, ServletResponse response) throws Exception {
+    protected boolean onLoginSuccess(AuthenticationToken token, Subject subject, ServletRequest request,
+            ServletResponse response) throws Exception {
         regenerateSession(subject);
         return super.onLoginSuccess(token, subject, request, response);
     }
@@ -102,7 +101,7 @@ public class OAuthAuthenticationFilter extends AuthenticatingFilter implements S
         State state = new State();
         Nonce nonce = new Nonce();
         URI uri;
-        if (oAuthProvider.isOpenIdCapable() && oAuthConfig.openIdConnect().isEnabled()) {
+        if (oauthProvider.isOpenIdCapable()) {
             uri = buildAuthenticationURI(state, nonce);
         } else {
             uri = buildAuthorizationURI(state);
@@ -114,16 +113,19 @@ public class OAuthAuthenticationFilter extends AuthenticatingFilter implements S
 
     private URI buildAuthorizationURI(State state) {
         return new AuthorizationRequest.Builder(new ResponseType(ResponseType.Value.CODE),
-                new ClientID(checkNotNull(oAuthConfig.getClientId(), "Missing client identifier"))).scope(createScope(oAuthConfig.getScopes()))
-                        .redirectionURI(checkNotNull(oAuthConfig.getRedirect(), "Missing redirect URI"))
-                        .endpointURI(oAuthProvider.getAuthorizationEndpoint()).state(state).build().toURI();
+                new ClientID(checkNotNull(oauthConfig.getClientId(), "Missing client identifier")))
+                .scope(createScope(oauthConfig.getScopes()))
+                .redirectionURI(checkNotNull(oauthConfig.getRedirect(), "Missing redirect URI"))
+                .endpointURI(oauthProvider.getAuthorizationEndpoint()).state(state).build().toURI();
     }
 
     private URI buildAuthenticationURI(State state, Nonce nonce) {
-        return new AuthenticationRequest.Builder(new ResponseType(ResponseType.Value.CODE), createOIDCScope(oAuthConfig.getScopes()),
-                new ClientID(checkNotNull(oAuthConfig.getClientId(), "Missing client identifier")),
-                checkNotNull(oAuthConfig.getRedirect(), "Missing redirect URI")).endpointURI(oAuthProvider.getAuthorizationEndpoint()).state(state)
-                        .nonce(nonce).build().toURI();
+        return new AuthenticationRequest.Builder(new ResponseType(ResponseType.Value.CODE),
+                createOidcScope(oauthConfig.getScopes()),
+                new ClientID(checkNotNull(oauthConfig.getClientId(), "Missing client identifier")),
+                checkNotNull(oauthConfig.getRedirect(), "Missing redirect URI"))
+                .endpointURI(oauthProvider.getAuthorizationEndpoint()).state(state)
+                .nonce(nonce).build().toURI();
     }
 
     private void saveState(State state, Nonce nonce) {
@@ -141,7 +143,7 @@ public class OAuthAuthenticationFilter extends AuthenticatingFilter implements S
         }
     }
 
-    private Scope createOIDCScope(List<String> scopes) {
+    private Scope createOidcScope(List<String> scopes) {
         Scope scope = createScope(scopes);
         scope.add(OIDCScopeValue.OPENID);
         return scope;

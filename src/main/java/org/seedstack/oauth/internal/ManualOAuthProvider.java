@@ -5,61 +5,61 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.oauth.internal;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.net.URI;
-import java.util.List;
 import java.util.Optional;
-
 import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.OAuthProvider;
 
 class ManualOAuthProvider implements OAuthProvider {
-    private final OAuthConfig.ProviderConfig providerConfig;
+    private final OAuthConfig oauthConfig;
 
-    ManualOAuthProvider(OAuthConfig.ProviderConfig providerConfig) {
-        this.providerConfig = providerConfig;
-    }
-
-    @Override
-    public boolean isOpenIdCapable() {
-        return providerConfig.getUserInfo() != null;
-    }
-
-    @Override
-    public Optional<URI> getIssuer() {
-        return Optional.empty();
+    ManualOAuthProvider(OAuthConfig oauthConfig) {
+        this.oauthConfig = oauthConfig;
     }
 
     @Override
     public URI getAuthorizationEndpoint() {
-        return checkNotNull(providerConfig.getAuthorization(), "Authorization endpoint should not be null");
+        return checkNotNull(oauthConfig.provider().getAuthorization(), "Authorization endpoint should not be null");
     }
 
     @Override
     public URI getTokenEndpoint() {
-        return checkNotNull(providerConfig.getToken(), "Token endpoint should not be null");
-    }
-
-    @Override
-    public Optional<URI> getUserInfoEndpoint() {
-        return Optional.ofNullable(providerConfig.getUserInfo());
+        return checkNotNull(oauthConfig.provider().getToken(), "Token endpoint should not be null");
     }
 
     @Override
     public Optional<URI> getRevocationEndpoint() {
-        return Optional.ofNullable(providerConfig.getRevocation());
+        return Optional.ofNullable(oauthConfig.provider().getRevocation());
     }
 
     @Override
-    public List<String> getIdTokenSigningAlgValuesSupported() {
-        return checkNotNull(providerConfig.getTokenSigningAlgValues(), "Token signing algorithm should not be null");
+    public boolean isOpenIdCapable() {
+        return oauthConfig.openIdConnect().isEnabled();
     }
 
     @Override
-    public URI getJwksUri() {
-        return checkNotNull(providerConfig.getJwksURI(), "Jwks uri should not be null");
+    public Optional<URI> getIssuer() {
+        return Optional.ofNullable(oauthConfig.openIdConnect().getIssuer());
+    }
+
+    @Override
+    public Optional<URI> getUserInfoEndpoint() {
+        return Optional.ofNullable(oauthConfig.openIdConnect().getUserInfo());
+    }
+
+    @Override
+    public Optional<URI> getJwksEndpoint() {
+        return Optional.ofNullable(oauthConfig.openIdConnect().getJwks());
+    }
+
+    @Override
+    public String getSigningAlgorithm() {
+        return checkNotNull(oauthConfig.openIdConnect().getSigningAlgorithm(),
+                "Token signing algorithm should not be null");
     }
 }

@@ -5,26 +5,29 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.oauth;
 
 import java.net.URI;
-import java.util.List;
 import java.util.Optional;
 
+/**
+ * This injectable inter
+ */
 public interface OAuthProvider {
-    boolean isOpenIdCapable();
-
-    Optional<URI> getIssuer();
-
     URI getAuthorizationEndpoint();
 
     URI getTokenEndpoint();
 
-    Optional<URI> getUserInfoEndpoint();
-
     Optional<URI> getRevocationEndpoint();
 
-    List<String> getIdTokenSigningAlgValuesSupported();
+    boolean isOpenIdCapable();
 
-    URI getJwksUri();
+    Optional<URI> getIssuer();
+
+    Optional<URI> getUserInfoEndpoint();
+
+    Optional<URI> getJwksEndpoint();
+
+    String getSigningAlgorithm();
 }

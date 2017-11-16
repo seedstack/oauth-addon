@@ -5,25 +5,39 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.oauth.internal;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.List;
 
 class DiscoveryDocument {
     private URI issuer;
-    private URI authorization_endpoint;
-    private URI token_endpoint;
-    private URI userinfo_endpoint;
-    private URI revocation_endpoint;
-    private URI jwks_uri;
-    private List<String> response_types_supported;
-    private List<String> subject_types_supported;
-    private List<String> id_token_signing_alg_values_supported;
-    private List<String> scopes_supported;
-    private List<String> token_endpoint_auth_methods_supported;
-    private List<String> claims_supported;
-    private List<String> code_challenge_methods_supported;
+    @JsonProperty("authorization_endpoint")
+    private URI authorizationEndpoint;
+    @JsonProperty("token_endpoint")
+    private URI tokenEndpoint;
+    @JsonProperty("userinfo_endpoint")
+    private URI userinfoEndpoint;
+    @JsonProperty("revocation_endpoint")
+    private URI revocationEndpoint;
+    @JsonProperty("jwks_uri")
+    private URI jwksUri;
+    @JsonProperty("response_types_supported")
+    private List<String> responseTypesSupported;
+    @JsonProperty("subject_types_supported")
+    private List<String> subjectTypesSupported;
+    @JsonProperty("id_token_signing_alg_values_supported")
+    private List<String> idTokenSigningAlgValuesSupported;
+    @JsonProperty("scopes_supported")
+    private List<String> scopesSupported;
+    @JsonProperty("token_endpoint_auth_methods_supported")
+    private List<String> tokenEndpointAuthMethodsSupported;
+    @JsonProperty("claims_supported")
+    private List<String> claimsSupported;
+    @JsonProperty("code_challenge_methods_supported")
+    private List<String> codeChallengeMethodsSupported;
 
     URI getIssuer() {
         return issuer;
@@ -33,99 +47,99 @@ class DiscoveryDocument {
         this.issuer = issuer;
     }
 
-    URI getAuthorization_endpoint() {
-        return authorization_endpoint;
+    URI getAuthorizationEndpoint() {
+        return authorizationEndpoint;
     }
 
-    void setAuthorization_endpoint(URI authorization_endpoint) {
-        this.authorization_endpoint = authorization_endpoint;
+    void setAuthorizationEndpoint(URI authorizationEndpoint) {
+        this.authorizationEndpoint = authorizationEndpoint;
     }
 
-    URI getToken_endpoint() {
-        return token_endpoint;
+    URI getTokenEndpoint() {
+        return tokenEndpoint;
     }
 
-    void setToken_endpoint(URI token_endpoint) {
-        this.token_endpoint = token_endpoint;
+    void setTokenEndpoint(URI tokenEndpoint) {
+        this.tokenEndpoint = tokenEndpoint;
     }
 
-    URI getUserinfo_endpoint() {
-        return userinfo_endpoint;
+    URI getUserinfoEndpoint() {
+        return userinfoEndpoint;
     }
 
-    void setUserinfo_endpoint(URI userinfo_endpoint) {
-        this.userinfo_endpoint = userinfo_endpoint;
+    void setUserinfoEndpoint(URI userinfoEndpoint) {
+        this.userinfoEndpoint = userinfoEndpoint;
     }
 
-    URI getRevocation_endpoint() {
-        return revocation_endpoint;
+    URI getRevocationEndpoint() {
+        return revocationEndpoint;
     }
 
-    void setRevocation_endpoint(URI revocation_endpoint) {
-        this.revocation_endpoint = revocation_endpoint;
+    void setRevocationEndpoint(URI revocationEndpoint) {
+        this.revocationEndpoint = revocationEndpoint;
     }
 
-    URI getJwks_uri() {
-        return jwks_uri;
+    URI getJwksUri() {
+        return jwksUri;
     }
 
-    void setJwks_uri(URI jwks_uri) {
-        this.jwks_uri = jwks_uri;
+    void setJwksUri(URI jwksUri) {
+        this.jwksUri = jwksUri;
     }
 
-    List<String> getResponse_types_supported() {
-        return response_types_supported;
+    List<String> getResponseTypesSupported() {
+        return responseTypesSupported;
     }
 
-    void setResponse_types_supported(List<String> response_types_supported) {
-        this.response_types_supported = response_types_supported;
+    void setResponseTypesSupported(List<String> responseTypesSupported) {
+        this.responseTypesSupported = responseTypesSupported;
     }
 
-    List<String> getSubject_types_supported() {
-        return subject_types_supported;
+    List<String> getSubjectTypesSupported() {
+        return subjectTypesSupported;
     }
 
-    void setSubject_types_supported(List<String> subject_types_supported) {
-        this.subject_types_supported = subject_types_supported;
+    void setSubjectTypesSupported(List<String> subjectTypesSupported) {
+        this.subjectTypesSupported = subjectTypesSupported;
     }
 
-    List<String> getId_token_signing_alg_values_supported() {
-        return id_token_signing_alg_values_supported;
+    List<String> getIdTokenSigningAlgValuesSupported() {
+        return idTokenSigningAlgValuesSupported;
     }
 
-    void setId_token_signing_alg_values_supported(List<String> id_token_signing_alg_values_supported) {
-        this.id_token_signing_alg_values_supported = id_token_signing_alg_values_supported;
+    void setIdTokenSigningAlgValuesSupported(List<String> idTokenSigningAlgValuesSupported) {
+        this.idTokenSigningAlgValuesSupported = idTokenSigningAlgValuesSupported;
     }
 
-    List<String> getScopes_supported() {
-        return scopes_supported;
+    List<String> getScopesSupported() {
+        return scopesSupported;
     }
 
-    void setScopes_supported(List<String> scopes_supported) {
-        this.scopes_supported = scopes_supported;
+    void setScopesSupported(List<String> scopesSupported) {
+        this.scopesSupported = scopesSupported;
     }
 
-    List<String> getToken_endpoint_auth_methods_supported() {
-        return token_endpoint_auth_methods_supported;
+    List<String> getTokenEndpointAuthMethodsSupported() {
+        return tokenEndpointAuthMethodsSupported;
     }
 
-    void setToken_endpoint_auth_methods_supported(List<String> token_endpoint_auth_methods_supported) {
-        this.token_endpoint_auth_methods_supported = token_endpoint_auth_methods_supported;
+    void setTokenEndpointAuthMethodsSupported(List<String> tokenEndpointAuthMethodsSupported) {
+        this.tokenEndpointAuthMethodsSupported = tokenEndpointAuthMethodsSupported;
     }
 
-    List<String> getClaims_supported() {
-        return claims_supported;
+    List<String> getClaimsSupported() {
+        return claimsSupported;
     }
 
-    void setClaims_supported(List<String> claims_supported) {
-        this.claims_supported = claims_supported;
+    void setClaimsSupported(List<String> claimsSupported) {
+        this.claimsSupported = claimsSupported;
     }
 
-    List<String> getCode_challenge_methods_supported() {
-        return code_challenge_methods_supported;
+    List<String> getCodeChallengeMethodsSupported() {
+        return codeChallengeMethodsSupported;
     }
 
-    void setCode_challenge_methods_supported(List<String> code_challenge_methods_supported) {
-        this.code_challenge_methods_supported = code_challenge_methods_supported;
+    void setCodeChallengeMethodsSupported(List<String> codeChallengeMethodsSupported) {
+        this.codeChallengeMethodsSupported = codeChallengeMethodsSupported;
     }
 }

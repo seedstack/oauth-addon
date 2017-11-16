@@ -18,15 +18,21 @@ import org.seedstack.coffig.SingleValue;
 @Config("security.oauth")
 public class OAuthConfig {
     private OpenIdConnectConfig openIdConnect = new OpenIdConnectConfig();
-    private ProviderConfig provider;
+    private ProviderConfig provider = new ProviderConfig();
     private URI discoveryDocument;
     private URI redirect;
     private String clientId;
     private String clientSecret;
     private List<String> scopes = new ArrayList<>();
+    private String signingAlgorithm = "RS256";
+    private Class<? extends AccessTokenValidator> accessTokenValidator;
 
     public OpenIdConnectConfig openIdConnect() {
         return openIdConnect;
+    }
+
+    public ProviderConfig provider() {
+        return provider;
     }
 
     public URI getDiscoveryDocument() {
@@ -35,15 +41,6 @@ public class OAuthConfig {
 
     public OAuthConfig setDiscoveryDocument(URI discoveryDocument) {
         this.discoveryDocument = discoveryDocument;
-        return this;
-    }
-
-    public ProviderConfig getProvider() {
-        return provider;
-    }
-
-    public OAuthConfig setProvider(ProviderConfig provider) {
-        this.provider = provider;
         return this;
     }
 
@@ -80,10 +77,32 @@ public class OAuthConfig {
         this.scopes.add(scope);
     }
 
+    public String getSigningAlgorithm() {
+        return signingAlgorithm;
+    }
+
+    public OAuthConfig setSigningAlgorithm(String signingAlgorithm) {
+        this.signingAlgorithm = signingAlgorithm;
+        return this;
+    }
+
+    public Class<? extends AccessTokenValidator> getAccessTokenValidator() {
+        return accessTokenValidator;
+    }
+
+    public OAuthConfig setAccessTokenValidator(Class<? extends AccessTokenValidator> accessTokenValidator) {
+        this.accessTokenValidator = accessTokenValidator;
+        return this;
+    }
+
     @Config("openIdConnect")
     public static class OpenIdConnectConfig {
         @SingleValue
         private boolean enabled = true;
+        private URI issuer;
+        private URI jwks;
+        private String signingAlgorithm = "RS256";
+        private URI userInfo;
 
         public boolean isEnabled() {
             return enabled;
@@ -93,13 +112,48 @@ public class OAuthConfig {
             this.enabled = enabled;
             return this;
         }
+
+        public URI getIssuer() {
+            return issuer;
+        }
+
+        public OpenIdConnectConfig setIssuer(URI issuer) {
+            this.issuer = issuer;
+            return this;
+        }
+
+        public URI getJwks() {
+            return jwks;
+        }
+
+        public OpenIdConnectConfig setJwks(URI jwks) {
+            this.jwks = jwks;
+            return this;
+        }
+
+        public String getSigningAlgorithm() {
+            return signingAlgorithm;
+        }
+
+        public OpenIdConnectConfig setSigningAlgorithm(String signingAlgorithm) {
+            this.signingAlgorithm = signingAlgorithm;
+            return this;
+        }
+
+        public URI getUserInfo() {
+            return userInfo;
+        }
+
+        public OpenIdConnectConfig setUserInfo(URI userInfo) {
+            this.userInfo = userInfo;
+            return this;
+        }
     }
 
     @Config("provider")
     public static class ProviderConfig {
         private URI authorization;
         private URI token;
-        private URI userInfo;
         private URI revocation;
 
         public URI getAuthorization() {
@@ -117,15 +171,6 @@ public class OAuthConfig {
 
         public ProviderConfig setToken(URI token) {
             this.token = token;
-            return this;
-        }
-
-        public URI getUserInfo() {
-            return userInfo;
-        }
-
-        public ProviderConfig setUserInfo(URI userInfo) {
-            this.userInfo = userInfo;
             return this;
         }
 

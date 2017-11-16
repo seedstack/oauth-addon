@@ -9,19 +9,36 @@
 package org.seedstack.oauth.internal;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.seedstack.oauth.internal.OAuthUtils.buildGenericError;
 
+import com.nimbusds.oauth2.sdk.AccessTokenResponse;
+import com.nimbusds.oauth2.sdk.AuthorizationCode;
+import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
+import com.nimbusds.oauth2.sdk.AuthorizationGrant;
+import com.nimbusds.oauth2.sdk.AuthorizationResponse;
+import com.nimbusds.oauth2.sdk.AuthorizationSuccessResponse;
+import com.nimbusds.oauth2.sdk.ErrorResponse;
+import com.nimbusds.oauth2.sdk.ParseException;
+import com.nimbusds.oauth2.sdk.TokenRequest;
+import com.nimbusds.oauth2.sdk.TokenResponse;
+import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
+import com.nimbusds.oauth2.sdk.auth.Secret;
+import com.nimbusds.oauth2.sdk.id.ClientID;
+import com.nimbusds.oauth2.sdk.id.State;
+import com.nimbusds.oauth2.sdk.token.Tokens;
+import com.nimbusds.openid.connect.sdk.Nonce;
+import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
+import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.inject.Inject;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -31,29 +48,11 @@ import org.apache.shiro.web.util.WebUtils;
 import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.OAuthProvider;
 import org.seedstack.seed.Configuration;
+import org.seedstack.seed.SeedException;
 import org.seedstack.seed.web.SecurityFilter;
 import org.seedstack.seed.web.security.internal.SessionRegenerationCapable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.nimbusds.oauth2.sdk.AccessTokenResponse;
-import com.nimbusds.oauth2.sdk.AuthorizationCode;
-import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
-import com.nimbusds.oauth2.sdk.AuthorizationGrant;
-import com.nimbusds.oauth2.sdk.AuthorizationResponse;
-import com.nimbusds.oauth2.sdk.AuthorizationSuccessResponse;
-import com.nimbusds.oauth2.sdk.ParseException;
-import com.nimbusds.oauth2.sdk.TokenRequest;
-import com.nimbusds.oauth2.sdk.TokenResponse;
-import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
-import com.nimbusds.oauth2.sdk.auth.Secret;
-import com.nimbusds.oauth2.sdk.id.ClientID;
-import com.nimbusds.oauth2.sdk.id.State;
-import com.nimbusds.oauth2.sdk.token.AccessToken;
-import com.nimbusds.oauth2.sdk.token.Tokens;
-import com.nimbusds.openid.connect.sdk.Nonce;
-import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
-import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
 
 @SecurityFilter("oauthCallback")
 public class OAuthCallbackFilter extends AuthenticatingFilter implements SessionRegenerationCapable {
@@ -61,23 +60,18 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
     private static final String DEFAULT_REDIRECT_URL = "/";
     private String redirectUrl = DEFAULT_REDIRECT_URL;
     @Inject
-    private OAuthProvider oAuthProvider;
+    private OAuthProvider oauthProvider;
     @Configuration
-    private OAuthConfig oAuthConfig;
+    private OAuthConfig oauthConfig;
 
     @Override
     protected AuthenticationToken createToken(ServletRequest request, ServletResponse response) throws Exception {
         Tokens tokens = requestTokens(new AuthorizationCodeGrant(parseAuthorizationCode(WebUtils.toHttp(request)),
-                checkNotNull(oAuthConfig.getRedirect(), "Missing redirect URI")));
-
-        AccessToken accessToken = checkNotNull(tokens.getAccessToken(), "Missing access token");
-
-        Nonce nonce = checkNotNull((Nonce) SecurityUtils.getSubject().getSession().getAttribute(OAuthAuthenticationFilter.NONCE_KEY),
-                "No OAuth nonce returned by authorization provider");
+                checkNotNull(oauthConfig.getRedirect(), "Missing redirect URI")));
         if (tokens instanceof OIDCTokens) {
-            return new OAuthAuthenticationToken(accessToken, ((OIDCTokens) tokens).getIDToken(), nonce);
+            return new OidcAuthenticationToken(tokens.getAccessToken(), ((OIDCTokens) tokens).getIDToken(), getNonce());
         } else {
-            return new OAuthAuthenticationToken(accessToken);
+            return new OAuthAuthenticationToken(tokens.getAccessToken());
         }
     }
 
@@ -87,14 +81,16 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
     }
 
     @Override
-    protected boolean onLoginSuccess(AuthenticationToken token, Subject subject, ServletRequest request, ServletResponse response) throws Exception {
+    protected boolean onLoginSuccess(AuthenticationToken token, Subject subject, ServletRequest request,
+            ServletResponse response) throws Exception {
         regenerateSession(subject);
         issueSuccessRedirect(request, response);
         return false;
     }
 
     @Override
-    protected boolean onLoginFailure(AuthenticationToken token, AuthenticationException e, ServletRequest request, ServletResponse response) {
+    protected boolean onLoginFailure(AuthenticationToken token, AuthenticationException e, ServletRequest request,
+            ServletResponse response) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Authentication exception", e);
         }
@@ -108,7 +104,8 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
     }
 
     /**
-     * Returns the URL to where the user will be redirected after logout. Default is the web application's context root, i.e. {@code "/"}
+     * Returns the URL to where the user will be redirected after logout. Default is the web application's context
+     * root, i.e. {@code "/"}
      *
      * @return the URL to where the user will be redirected after logout.
      */
@@ -117,7 +114,8 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
     }
 
     /**
-     * Sets the URL to where the user will be redirected after logout. Default is the web application's context root, i.e. {@code "/"}
+     * Sets the URL to where the user will be redirected after logout. Default is the web application's context root,
+     * i.e. {@code "/"}
      *
      * @param redirectUrl the url to where the user will be redirected after logout
      */
@@ -128,49 +126,45 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
     private AuthorizationCode parseAuthorizationCode(HttpServletRequest request) {
         AuthorizationResponse authorizationResponse;
         try {
-            authorizationResponse = AuthorizationResponse.parse(new URI(request.getRequestURI()), getParameterMap(request));
-        } catch (ParseException e) {
-            // TODO error handling
-            throw new RuntimeException(e);
-        } catch (URISyntaxException e) {
-            // TODO error handling
-            throw new RuntimeException(e);
+            authorizationResponse = AuthorizationResponse
+                    .parse(new URI(request.getRequestURI()), getParameterMap(request));
+        } catch (ParseException | URISyntaxException e) {
+            throw SeedException.wrap(e, OAuthErrorCode.FAILED_TO_PARSE_AUTHORIZATION_RESPONSE);
         }
 
         if (authorizationResponse.indicatesSuccess()) {
             // Validate that response state is consistent with the one stored in session
-            State storedState = checkNotNull((State) SecurityUtils.getSubject().getSession().getAttribute(OAuthAuthenticationFilter.STATE_KEY),
+            State storedState = checkNotNull(
+                    (State) SecurityUtils.getSubject().getSession().getAttribute(OAuthAuthenticationFilter.STATE_KEY),
                     "No OAuth state found in security session");
-            State returnedState = checkNotNull(authorizationResponse.getState(), "No OAuth state returned by authorization provider");
+            State returnedState = checkNotNull(authorizationResponse.getState(),
+                    "No OAuth state returned by authorization provider");
             if (!storedState.equals(returnedState)) {
                 throw new IllegalStateException("OAuth state mismatch");
             }
             return ((AuthorizationSuccessResponse) authorizationResponse).getAuthorizationCode();
         } else {
-            // TODO error handling
-            throw new RuntimeException("Error received from authorization provider");
+            throw buildGenericError((ErrorResponse) authorizationResponse);
         }
     }
 
     private Tokens requestTokens(AuthorizationGrant authorizationGrant) {
-        TokenRequest tokenRequest = new TokenRequest(checkNotNull(oAuthProvider.getTokenEndpoint(), "Missing token endpoint"),
-                new ClientSecretBasic(new ClientID(checkNotNull(oAuthConfig.getClientId(), "Missing client identifier")),
-                        new Secret(checkNotNull(oAuthConfig.getClientSecret(), "Missing client secret"))),
+        TokenRequest tokenRequest = new TokenRequest(
+                checkNotNull(oauthProvider.getTokenEndpoint(), "Missing token endpoint"),
+                new ClientSecretBasic(
+                        new ClientID(checkNotNull(oauthConfig.getClientId(), "Missing client identifier")),
+                        new Secret(checkNotNull(oauthConfig.getClientSecret(), "Missing client secret"))),
                 authorizationGrant);
 
         TokenResponse tokenResponse;
         try {
-            if (oAuthProvider.isOpenIdCapable() && oAuthConfig.openIdConnect().isEnabled()) {
+            if (oauthProvider.isOpenIdCapable()) {
                 tokenResponse = OIDCTokenResponse.parse(tokenRequest.toHTTPRequest().send());
             } else {
                 tokenResponse = TokenResponse.parse(tokenRequest.toHTTPRequest().send());
             }
-        } catch (IOException e) {
-            // TODO error handling
-            throw new RuntimeException(e);
-        } catch (ParseException e) {
-            // TODO error handling
-            throw new RuntimeException(e);
+        } catch (IOException | ParseException e) {
+            throw SeedException.wrap(e, OAuthErrorCode.FAILED_TO_REQUEST_TOKENS);
         }
 
         if (tokenResponse.indicatesSuccess()) {
@@ -180,9 +174,12 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
                 return ((AccessTokenResponse) tokenResponse).getTokens();
             }
         } else {
-            // TODO error handling
-            throw new RuntimeException("Error received from authorization provider");
+            throw buildGenericError((ErrorResponse) tokenResponse);
         }
+    }
+
+    private Nonce getNonce() {
+        return (Nonce) SecurityUtils.getSubject().getSession().getAttribute(OAuthAuthenticationFilter.NONCE_KEY);
     }
 
     private Map<String, String> getParameterMap(HttpServletRequest httpServletRequest) {

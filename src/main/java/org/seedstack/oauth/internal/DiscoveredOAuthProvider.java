@@ -5,65 +5,78 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.oauth.internal;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.nimbusds.openid.connect.sdk.OIDCScopeValue;
 import java.net.URI;
-//Added by JA
 import java.util.List;
 import java.util.Optional;
-
+import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.OAuthProvider;
-
-import com.nimbusds.openid.connect.sdk.OIDCScopeValue;
+import org.seedstack.seed.SeedException;
 
 class DiscoveredOAuthProvider implements OAuthProvider {
-    private final DiscoveryDocument oicDiscoveryDocument;
+    private final OAuthConfig oauthConfig;
+    private final DiscoveryDocument oidcDiscoveryDocument;
 
-    DiscoveredOAuthProvider(DiscoveryDocument oicDiscoveryDocument) {
-        this.oicDiscoveryDocument = oicDiscoveryDocument;
+    DiscoveredOAuthProvider(OAuthConfig oauthConfig, DiscoveryDocument oidcDiscoveryDocument) {
+        this.oauthConfig = oauthConfig;
+        this.oidcDiscoveryDocument = oidcDiscoveryDocument;
     }
 
     @Override
     public boolean isOpenIdCapable() {
-        List<String> scopes_supported = oicDiscoveryDocument.getScopes_supported();
-        return scopes_supported != null && scopes_supported.contains(OIDCScopeValue.OPENID.getValue());
+        List<String> scopesSupported = oidcDiscoveryDocument.getScopesSupported();
+        return oauthConfig.openIdConnect().isEnabled()
+                && scopesSupported != null
+                && scopesSupported.contains(OIDCScopeValue.OPENID.getValue());
     }
 
     @Override
     public Optional<URI> getIssuer() {
-        return Optional.ofNullable(oicDiscoveryDocument.getIssuer());
+        return Optional.ofNullable(oidcDiscoveryDocument.getIssuer());
     }
 
     @Override
     public URI getAuthorizationEndpoint() {
-        return checkNotNull(oicDiscoveryDocument.getAuthorization_endpoint(), "Authorization endpoint should not be null");
+        return checkNotNull(oidcDiscoveryDocument.getAuthorizationEndpoint(),
+                "Authorization endpoint should not be null");
     }
 
     @Override
     public URI getTokenEndpoint() {
-        return checkNotNull(oicDiscoveryDocument.getToken_endpoint(), "Token endpoint should not be null");
+        return checkNotNull(oidcDiscoveryDocument.getTokenEndpoint(), "Token endpoint should not be null");
     }
 
     @Override
     public Optional<URI> getUserInfoEndpoint() {
-        return Optional.ofNullable(oicDiscoveryDocument.getUserinfo_endpoint());
+        return Optional.ofNullable(oidcDiscoveryDocument.getUserinfoEndpoint());
     }
 
     @Override
     public Optional<URI> getRevocationEndpoint() {
-        return Optional.ofNullable(oicDiscoveryDocument.getRevocation_endpoint());
+        return Optional.ofNullable(oidcDiscoveryDocument.getRevocationEndpoint());
     }
 
     @Override
-    public List<String> getIdTokenSigningAlgValuesSupported() {
-        return checkNotNull(oicDiscoveryDocument.getId_token_signing_alg_values_supported(), "Token signing algorithm should not be null");
-
+    public Optional<URI> getJwksEndpoint() {
+        return Optional.ofNullable(oidcDiscoveryDocument.getJwksUri());
     }
 
     @Override
-    public URI getJwksUri() {
-        return checkNotNull(oicDiscoveryDocument.getJwks_uri(), "Jwks uri should not be null");
+    public String getSigningAlgorithm() {
+        List<String> supportedAlgorithms = oidcDiscoveryDocument.getIdTokenSigningAlgValuesSupported();
+        String signingAlgorithm = checkNotNull(oauthConfig.openIdConnect().getSigningAlgorithm(),
+                "Expected algorithm not configured");
+        if (!supportedAlgorithms.contains(signingAlgorithm)) {
+            throw SeedException.createNew(OAuthErrorCode.SIGNING_ALGORITHM_NOT_SUPPORTED_BY_PROVIDER)
+                    .put("requiredAlgorithm", signingAlgorithm)
+                    .put("supportedAlgorithms", String.valueOf(supportedAlgorithms));
+
+        }
+        return signingAlgorithm;
     }
 }
