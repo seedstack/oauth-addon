@@ -63,7 +63,8 @@
                             <licenseMerge>CDDL|GPLv2+CE</licenseMerge>
                             <licenseMerge>CDDL|Common Development and Distribution License (CDDL) v1.0</licenseMerge>
                             <licenseMerge>CDDL|CDDL + GPLv2 with classpath exception</licenseMerge>
-                            <licenseMerge>CDDL|GNU General Public License, Version 2 with the Classpath Exception</licenseMerge>
+                            <licenseMerge>CDDL|GNU General Public License, Version 2 with the Classpath Exception
+                            </licenseMerge>
                             <licenseMerge>CDDL|Common Development and Distribution License</licenseMerge>
                             <licenseMerge>JSON|The JSON License</licenseMerge>
                             <licenseMerge>LGPL 3.0|GNU Lesser Public License</licenseMerge>
@@ -77,6 +78,16 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>net.minidev</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>2.3</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
