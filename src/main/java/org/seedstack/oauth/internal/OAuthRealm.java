@@ -10,6 +10,37 @@ package org.seedstack.oauth.internal;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+
+import org.seedstack.oauth.AccessTokenValidator;
+import org.seedstack.oauth.OAuthConfig;
+import org.seedstack.oauth.OAuthProvider;
+import org.seedstack.oauth.TokenValidationException;
+import org.seedstack.seed.Configuration;
+import org.seedstack.seed.security.AuthenticationException;
+import org.seedstack.seed.security.AuthenticationInfo;
+import org.seedstack.seed.security.AuthenticationToken;
+import org.seedstack.seed.security.Realm;
+import org.seedstack.seed.security.RoleMapping;
+import org.seedstack.seed.security.RolePermissionResolver;
+import org.seedstack.seed.security.principals.PrincipalProvider;
+import org.seedstack.seed.security.principals.Principals;
+import org.seedstack.seed.security.principals.SimplePrincipalProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.nimbusds.jose.Algorithm;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -36,34 +67,6 @@ import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenClaimsVerifier;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import com.nimbusds.openid.connect.sdk.validators.InvalidHashException;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import org.seedstack.oauth.AccessTokenValidator;
-import org.seedstack.oauth.OAuthConfig;
-import org.seedstack.oauth.OAuthProvider;
-import org.seedstack.oauth.TokenValidationException;
-import org.seedstack.seed.Configuration;
-import org.seedstack.seed.security.AuthenticationException;
-import org.seedstack.seed.security.AuthenticationInfo;
-import org.seedstack.seed.security.AuthenticationToken;
-import org.seedstack.seed.security.Realm;
-import org.seedstack.seed.security.RoleMapping;
-import org.seedstack.seed.security.RolePermissionResolver;
-import org.seedstack.seed.security.principals.PrincipalProvider;
-import org.seedstack.seed.security.principals.Principals;
-import org.seedstack.seed.security.principals.SimplePrincipalProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class OAuthRealm implements Realm {
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuthRealm.class);
@@ -81,14 +84,12 @@ public class OAuthRealm implements Realm {
     private OAuthConfig oauthConfig;
 
     @Override
-    public Set<String> getRealmRoles(PrincipalProvider<?> identityPrincipal,
-            Collection<PrincipalProvider<?>> otherPrincipals) {
+    public Set<String> getRealmRoles(PrincipalProvider<?> identityPrincipal, Collection<PrincipalProvider<?>> otherPrincipals) {
         return new HashSet<>();
     }
 
     @Override
-    public AuthenticationInfo getAuthenticationInfo(
-            AuthenticationToken authenticationToken) throws AuthenticationException {
+    public AuthenticationInfo getAuthenticationInfo(AuthenticationToken authenticationToken) throws AuthenticationException {
         if (authenticationToken instanceof OAuthAuthenticationToken) {
             AccessToken accessToken = (AccessToken) authenticationToken.getCredentials();
             String subjectId;
@@ -97,15 +98,8 @@ public class OAuthRealm implements Realm {
                 JWT idToken = (JWT) authenticationToken.getPrincipal();
 
                 // Validate id and access token using OpenId Connect specification
-                IDTokenClaimsSet jwtClaimsSet = validateIdToken(
-                        idToken,
-                        ((OidcAuthenticationToken) authenticationToken).getNonce()
-                );
-                validateOicdAccessToken(
-                        accessToken,
-                        idToken.getHeader().getAlgorithm(),
-                        jwtClaimsSet.getAccessTokenHash()
-                );
+                IDTokenClaimsSet jwtClaimsSet = validateIdToken(idToken, ((OidcAuthenticationToken) authenticationToken).getNonce());
+                validateOicdAccessToken(accessToken, idToken.getHeader().getAlgorithm(), jwtClaimsSet.getAccessTokenHash());
 
                 // Extract subject id from claim set
                 subjectId = checkNotNull(jwtClaimsSet.getSubject(), "Missing subject claim").getValue();
@@ -128,8 +122,7 @@ public class OAuthRealm implements Realm {
                 authenticationInfo.getOtherPrincipals().add(Principals.lastNamePrincipal(userInfo.getFamilyName()));
                 authenticationInfo.getOtherPrincipals().add(Principals.fullNamePrincipal(userInfo.getName()));
                 authenticationInfo.getOtherPrincipals().add(Principals.localePrincipal(userInfo.getLocale()));
-                authenticationInfo.getOtherPrincipals()
-                        .add(new SimplePrincipalProvider("picture", userInfo.getPicture().toString()));
+                authenticationInfo.getOtherPrincipals().add(new SimplePrincipalProvider("picture", userInfo.getPicture().toString()));
             });
             return authenticationInfo;
         } else {
@@ -153,8 +146,7 @@ public class OAuthRealm implements Realm {
     }
 
     private IDTokenClaimsSet validateIdToken(JWT token, Nonce nonce) {
-        Issuer expectedIssuer = new Issuer(oauthProvider.getIssuer()
-                .orElseThrow(() -> new TokenValidationException("Missing issuer")));
+        Issuer expectedIssuer = new Issuer(oauthProvider.getIssuer().orElseThrow(() -> new TokenValidationException("Missing issuer")));
         ClientID clientId = new ClientID(oauthConfig.getClientId());
 
         // Validate token
@@ -175,8 +167,7 @@ public class OAuthRealm implements Realm {
         // Check that the token is intended for this client
         List<Audience> audience = claims.getAudience();
         if (!audience.contains(new Audience(clientId))) {
-            throw new TokenValidationException(
-                    "The received ID token is not intended for this client (audience mismatch)");
+            throw new TokenValidationException("The received ID token is not intended for this client (audience mismatch)");
         }
 
         return claims;
@@ -191,28 +182,17 @@ public class OAuthRealm implements Realm {
             JWSAlgorithm expectedAlgorithm = JWSAlgorithm.parse(oauthProvider.getSigningAlgorithm());
             if (expectedAlgorithm.getName().startsWith("HS")) {
                 // HMAC algorithm uses the client secret for validation
-                return new IDTokenValidator(
-                        expectedIssuer,
-                        clientId,
-                        expectedAlgorithm,
-                        new Secret(oauthConfig.getClientSecret()));
+                return new IDTokenValidator(expectedIssuer, clientId, expectedAlgorithm, new Secret(oauthConfig.getClientSecret()));
             } else {
                 // Other algorithms uses certificates for validation
                 URL jwkSetURL;
                 try {
-                    jwkSetURL = oauthProvider.getJwksEndpoint()
-                            .orElseThrow(() -> new TokenValidationException("Missing JWKS endpoint URI"))
-                            .toURL();
+                    jwkSetURL = oauthProvider.getJwksEndpoint().orElseThrow(() -> new TokenValidationException("Missing JWKS endpoint URI")).toURL();
                 } catch (MalformedURLException e) {
                     throw new TokenValidationException("JWKS URI is not a well-formed URL", e);
                 }
 
-                return new IDTokenValidator(
-                        expectedIssuer,
-                        clientId,
-                        expectedAlgorithm,
-                        jwkSetURL
-                );
+                return new IDTokenValidator(expectedIssuer, clientId, expectedAlgorithm, jwkSetURL);
             }
         } else {
             throw new TokenValidationException("Unsupported JWT token type");
@@ -220,36 +200,26 @@ public class OAuthRealm implements Realm {
     }
 
     private IDTokenClaimsVerifier createClaimsVerifier(Issuer expectedIssuer, ClientID clientId, Nonce nonce) {
-        return new IDTokenClaimsVerifier(
-                expectedIssuer,
-                clientId,
-                nonce,
-                0
-        );
+        return new IDTokenClaimsVerifier(expectedIssuer, clientId, nonce, 0);
     }
 
-    private void validateOicdAccessToken(AccessToken accessToken, Algorithm algorithm,
-            AccessTokenHash accessTokenHash) {
+    private void validateOicdAccessToken(AccessToken accessToken, Algorithm algorithm, AccessTokenHash accessTokenHash) {
         checkNotNull(accessToken, "Missing access token");
         checkNotNull(algorithm, "Missing algorithm");
-        checkNotNull(accessTokenHash, "Missing access token hash (at_hash claim)");
+
+        if (accessTokenHash == null) {
+            throw new TokenValidationException("Access Token hash (at_hash claim) is not a valid Hash claim");
+        }
 
         if (algorithm instanceof JWSAlgorithm) {
             JWSAlgorithm expectedAlgorithm = JWSAlgorithm.parse(oauthConfig.getSigningAlgorithm());
             if (!expectedAlgorithm.equals(algorithm)) {
-                throw new TokenValidationException("Access token signing algorithm ("
-                        + algorithm.getName()
-                        + ") does not match the expected algorithm ("
-                        + expectedAlgorithm.getName()
-                        + ")");
+                throw new TokenValidationException("Access token signing algorithm (" + algorithm.getName()
+                        + ") does not match the expected algorithm (" + expectedAlgorithm.getName() + ")");
             }
 
             try {
-                com.nimbusds.openid.connect.sdk.validators.AccessTokenValidator.validate(
-                        accessToken,
-                        (JWSAlgorithm) algorithm,
-                        accessTokenHash
-                );
+                com.nimbusds.openid.connect.sdk.validators.AccessTokenValidator.validate(accessToken, (JWSAlgorithm) algorithm, accessTokenHash);
             } catch (InvalidHashException e) {
                 throw new TokenValidationException("Failed to validate access token", e);
             }
@@ -265,8 +235,7 @@ public class OAuthRealm implements Realm {
                 UserInfoResponse userInfoResponse;
                 try {
                     userInfoResponse = UserInfoResponse
-                            .parse(new UserInfoRequest(userInfoEndpoint.get(), ((BearerAccessToken) accessToken))
-                                    .toHTTPRequest().send());
+                            .parse(new UserInfoRequest(userInfoEndpoint.get(), ((BearerAccessToken) accessToken)).toHTTPRequest().send());
                 } catch (IOException | ParseException e) {
                     LOGGER.error("Unable to fetch user info from {}", userInfoEndpoint.get(), e);
                     return Optional.empty();
@@ -274,8 +243,8 @@ public class OAuthRealm implements Realm {
                 if (userInfoResponse.indicatesSuccess()) {
                     return Optional.of(((UserInfoSuccessResponse) userInfoResponse).getUserInfo());
                 } else {
-                    LOGGER.error("The provider returned an error while fetching user info from {}",
-                            userInfoEndpoint.get(), OAuthUtils.buildGenericError(((ErrorResponse) userInfoResponse)));
+                    LOGGER.error("The provider returned an error while fetching user info from {}", userInfoEndpoint.get(),
+                            OAuthUtils.buildGenericError(((ErrorResponse) userInfoResponse)));
                     return Optional.empty();
                 }
             }
