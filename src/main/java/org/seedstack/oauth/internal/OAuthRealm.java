@@ -8,8 +8,6 @@
 
 package org.seedstack.oauth.internal;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -55,6 +53,7 @@ import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.id.Audience;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
+import com.nimbusds.oauth2.sdk.id.Subject;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.openid.connect.sdk.Nonce;
@@ -92,17 +91,23 @@ public class OAuthRealm implements Realm {
     public AuthenticationInfo getAuthenticationInfo(AuthenticationToken authenticationToken) throws AuthenticationException {
         if (authenticationToken instanceof OAuthAuthenticationToken) {
             AccessToken accessToken = (AccessToken) authenticationToken.getCredentials();
-            String subjectId;
+            String subjectId = "";
 
             if (authenticationToken instanceof OidcAuthenticationToken) {
                 JWT idToken = (JWT) authenticationToken.getPrincipal();
 
                 // Validate id and access token using OpenId Connect specification
-                IDTokenClaimsSet jwtClaimsSet = validateIdToken(idToken, ((OidcAuthenticationToken) authenticationToken).getNonce());
-                validateOicdAccessToken(accessToken, idToken.getHeader().getAlgorithm(), jwtClaimsSet.getAccessTokenHash());
+                IDTokenClaimsSet jwtClaimsSet = validateIdToken(idToken, ((OidcAuthenticationToken) authenticationToken)
+                                                .getNonce());
+                validateOicdAccessToken(accessToken, idToken.getHeader().getAlgorithm(), 
+                                        jwtClaimsSet.getAccessTokenHash());
 
                 // Extract subject id from claim set
-                subjectId = checkNotNull(jwtClaimsSet.getSubject(), "Missing subject claim").getValue();
+                Subject subject = jwtClaimsSet.getSubject();
+                if(subject == null){
+                    throw new TokenValidationException("Unable to retireve subject from Jwt Claim Set");
+                }
+                subjectId = subject.getValue();
             } else {
                 // Validate access token with custom validator
                 AccessTokenValidator accessTokenValidator = accessTokenValidatorProvider.get();
@@ -146,7 +151,8 @@ public class OAuthRealm implements Realm {
     }
 
     private IDTokenClaimsSet validateIdToken(JWT token, Nonce nonce) {
-        Issuer expectedIssuer = new Issuer(oauthProvider.getIssuer().orElseThrow(() -> new TokenValidationException("Missing issuer")));
+        Issuer expectedIssuer = new Issuer(oauthProvider.getIssuer()
+                .orElseThrow(() -> new TokenValidationException("Missing issuer")));
         ClientID clientId = new ClientID(oauthConfig.getClientId());
 
         // Validate token
@@ -187,7 +193,8 @@ public class OAuthRealm implements Realm {
                 // Other algorithms uses certificates for validation
                 URL jwkSetURL;
                 try {
-                    jwkSetURL = oauthProvider.getJwksEndpoint().orElseThrow(() -> new TokenValidationException("Missing JWKS endpoint URI")).toURL();
+                    jwkSetURL = oauthProvider.getJwksEndpoint()
+                            .orElseThrow(() -> new TokenValidationException("Missing JWKS endpoint URI")).toURL();
                 } catch (MalformedURLException e) {
                     throw new TokenValidationException("JWKS URI is not a well-formed URL", e);
                 }
@@ -204,8 +211,10 @@ public class OAuthRealm implements Realm {
     }
 
     private void validateOicdAccessToken(AccessToken accessToken, Algorithm algorithm, AccessTokenHash accessTokenHash) {
-        checkNotNull(accessToken, "Missing access token");
-        checkNotNull(algorithm, "Missing algorithm");
+
+        if (accessToken == null) {
+            throw new TokenValidationException("Access Token is not a valid token");
+        }
 
         if (accessTokenHash == null) {
             throw new TokenValidationException("Access Token hash (at_hash claim) is not a valid Hash claim");
