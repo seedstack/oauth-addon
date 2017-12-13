@@ -155,7 +155,20 @@ public class OAuthConfig {
         private URI authorization;
         private URI token;
         private URI revocation;
-
+        private URI issuer;
+        private URI jwks;
+        private boolean plainJwtAllowed;
+        private URI userInfo;
+        
+        public URI getUserInfo() {
+            return userInfo;
+        }
+        
+        public ProviderConfig setUserInfo(URI userInfo) {
+             this.userInfo = userInfo;
+             return this;
+        }
+        
         public URI getAuthorization() {
             return authorization;
         }
@@ -180,6 +193,32 @@ public class OAuthConfig {
 
         public void setRevocation(URI revocation) {
             this.revocation = revocation;
+        }
+        
+        public URI getIssuer() {
+            return issuer;
+        }
+
+        public ProviderConfig setIssuer(URI issuer) {
+            this.issuer = issuer;
+            return this;
+        }
+        
+        public URI getJwks() {
+            return jwks;
+        }
+
+        public ProviderConfig setJwks(URI jwks) {
+            this.jwks = jwks;
+            return this;
+        }
+
+        public boolean isPlainJwtAllowed() {
+            return plainJwtAllowed;
+        }
+
+        public void setPlainJwtAllowed(boolean plainJwtAllowed) {
+            this.plainJwtAllowed = plainJwtAllowed;
         }
     }
 }

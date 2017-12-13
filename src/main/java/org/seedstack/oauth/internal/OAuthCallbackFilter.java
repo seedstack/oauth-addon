@@ -63,6 +63,7 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
     private OAuthProvider oauthProvider;
     @Configuration
     private OAuthConfig oauthConfig;
+    
 
     @Override
     protected AuthenticationToken createToken(ServletRequest request, ServletResponse response) throws Exception {
@@ -133,11 +134,13 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
         }
 
         if (authorizationResponse.indicatesSuccess()) {
+            
             // Validate that response state is consistent with the one stored in session
-            State storedState = checkNotNull(
+         State storedState = checkNotNull(
                     (State) SecurityUtils.getSubject().getSession().getAttribute(OAuthAuthenticationFilter.STATE_KEY),
                     "No OAuth state found in security session");
-            State returnedState = checkNotNull(authorizationResponse.getState(),
+
+         State returnedState = checkNotNull(authorizationResponse.getState(),
                     "No OAuth state returned by authorization provider");
             if (!storedState.equals(returnedState)) {
                 throw new IllegalStateException("OAuth state mismatch");
@@ -149,12 +152,14 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
     }
 
     private Tokens requestTokens(AuthorizationGrant authorizationGrant) {
+        
         TokenRequest tokenRequest = new TokenRequest(
                 checkNotNull(oauthProvider.getTokenEndpoint(), "Missing token endpoint"),
                 new ClientSecretBasic(
                         new ClientID(checkNotNull(oauthConfig.getClientId(), "Missing client identifier")),
                         new Secret(checkNotNull(oauthConfig.getClientSecret(), "Missing client secret"))),
                 authorizationGrant);
+        
 
         TokenResponse tokenResponse;
         try {
@@ -189,4 +194,5 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
         }
         return map;
     }
+    
 }

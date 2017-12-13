@@ -76,6 +76,7 @@
                     </configuration>
                 </plugin>
             </plugins>
+            
         </pluginManagement>
     </build>
 
@@ -159,6 +160,35 @@
             <version>${rest-assured.version}</version>
             <scope>test</scope>
         </dependency>
+        
+        <!-- Added for PowerMock start-->
+     <!-- <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4</artifactId>
+            <version>1.6.4</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito</artifactId>
+            <version>1.6.4</version>
+            <scope>test</scope>
+        </dependency>   -->
+        <!-- https://mvnrepository.com/artifact/org.powermock/powermock-api-easymock -->
+       <!--  <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-easymock</artifactId>
+            <version>1.6.4</version>
+            <scope>test</scope>
+        </dependency> -->
+       <!-- https://mvnrepository.com/artifact/org.easymock/easymock --> 
+       <!--  <dependency>
+            <groupId>org.easymock</groupId>
+            <artifactId>easymock</artifactId>
+            <version>3.5.1</version>
+            <scope>test</scope>
+        </dependency>  -->
+        <!-- Added for PowerMock end-->
     </dependencies>
 
     <scm>

@@ -11,6 +11,7 @@ package org.seedstack.oauth.internal;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.HashSet;
@@ -26,6 +27,7 @@ import org.seedstack.oauth.AccessTokenValidator;
 import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.OAuthProvider;
 import org.seedstack.oauth.TokenValidationException;
+import org.seedstack.oauth.validator.PlainAccessTokenValidator;
 import org.seedstack.seed.Configuration;
 import org.seedstack.seed.security.AuthenticationException;
 import org.seedstack.seed.security.AuthenticationInfo;
@@ -110,13 +112,7 @@ public class OAuthRealm implements Realm {
                 subjectId = subject.getValue();
             } else {
                 // Validate access token with custom validator
-                AccessTokenValidator accessTokenValidator = accessTokenValidatorProvider.get();
-                if (accessTokenValidator != null) {
-                    accessTokenValidator.validate(accessToken.getValue());
-                } else {
-                    throw new TokenValidationException("No access token validator configured");
-                }
-
+                validateAccessTokenWithCustomValidation(accessToken);
                 // Subject id is unknown
                 subjectId = "";
             }
@@ -151,6 +147,7 @@ public class OAuthRealm implements Realm {
     }
 
     private IDTokenClaimsSet validateIdToken(JWT token, Nonce nonce) {
+        
         Issuer expectedIssuer = new Issuer(oauthProvider.getIssuer()
                 .orElseThrow(() -> new TokenValidationException("Missing issuer")));
         ClientID clientId = new ClientID(oauthConfig.getClientId());
@@ -180,8 +177,9 @@ public class OAuthRealm implements Realm {
     }
 
     private IDTokenValidator createIdTokenValidator(Issuer expectedIssuer, ClientID clientId, JWT token) {
-        if (token instanceof PlainJWT) {
-            throw new TokenValidationException("Unsecured JWT token are forbidden");
+        if (token instanceof PlainJWT && oauthConfig.provider().isPlainJwtAllowed()) {
+           // throw new TokenValidationException("Unsecured JWT token are forbidden");
+            return new IDTokenValidator(expectedIssuer, clientId);
         } else if (token instanceof EncryptedJWT) {
             throw new TokenValidationException("Encrypted JWT token are not supported");
         } else if (token instanceof SignedJWT) {
@@ -220,19 +218,22 @@ public class OAuthRealm implements Realm {
             throw new TokenValidationException("Access Token hash (at_hash claim) is not a valid Hash claim");
         }
 
+        
         if (algorithm instanceof JWSAlgorithm) {
             JWSAlgorithm expectedAlgorithm = JWSAlgorithm.parse(oauthConfig.getSigningAlgorithm());
             if (!expectedAlgorithm.equals(algorithm)) {
                 throw new TokenValidationException("Access token signing algorithm (" + algorithm.getName()
                         + ") does not match the expected algorithm (" + expectedAlgorithm.getName() + ")");
             }
-
             try {
                 com.nimbusds.openid.connect.sdk.validators.AccessTokenValidator.validate(accessToken, (JWSAlgorithm) algorithm, accessTokenHash);
             } catch (InvalidHashException e) {
                 throw new TokenValidationException("Failed to validate access token", e);
             }
-        } else {
+        }else if((algorithm instanceof Algorithm) && (oauthConfig.provider().isPlainJwtAllowed())){ 
+            validateAccessTokenWithCustomValidation(accessToken);
+        }
+        else {
             throw new TokenValidationException("The access token algorithm is not a valid JWS algorithm");
         }
     }
@@ -259,5 +260,16 @@ public class OAuthRealm implements Realm {
             }
         }
         return Optional.empty();
+    }
+    
+    
+    private void validateAccessTokenWithCustomValidation(AccessToken accessToken){
+        // Validate access token with custom validator
+        AccessTokenValidator accessTokenValidator = accessTokenValidatorProvider.get();
+        if (accessTokenValidator != null) {
+            accessTokenValidator.validate(accessToken.getValue());
+        } else {
+            throw new TokenValidationException("No access token validator configured");
+        }
     }
 }
