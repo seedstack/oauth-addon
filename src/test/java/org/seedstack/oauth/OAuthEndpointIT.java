@@ -21,7 +21,7 @@ import com.jayway.restassured.specification.RequestSpecification;
 
 
 public class OAuthEndpointIT extends AbstractSeedWebIT{
-    
+
     private static final String J_SESSION_ID = "JSESSIONID";
     private static final String LOCATION = "Location";
     private String jSessionId;
@@ -34,7 +34,7 @@ public class OAuthEndpointIT extends AbstractSeedWebIT{
         return ShrinkWrap.create(WebArchive.class);
     }
 
-    
+
     @Test
     @RunAsClient
     public void request_to_authorise_user_should_succeed() {
@@ -56,9 +56,9 @@ public class OAuthEndpointIT extends AbstractSeedWebIT{
                 .expect()
                 .statusCode(302)
                 .when()
-                .get(response2.getHeader(LOCATION)); 
+                .get(response2.getHeader(LOCATION));
     }
-    
+
     private void extractSessionId(Response response1) {
         jSessionId = response1.getCookie(J_SESSION_ID);
     }
