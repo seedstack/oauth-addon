@@ -8,39 +8,6 @@
 
 package org.seedstack.oauth.internal;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-
-import org.seedstack.oauth.AccessTokenValidator;
-import org.seedstack.oauth.OAuthConfig;
-import org.seedstack.oauth.OAuthProvider;
-import org.seedstack.oauth.TokenValidationException;
-import org.seedstack.oauth.validator.PlainAccessTokenValidator;
-import org.seedstack.seed.Configuration;
-import org.seedstack.seed.security.AuthenticationException;
-import org.seedstack.seed.security.AuthenticationInfo;
-import org.seedstack.seed.security.AuthenticationToken;
-import org.seedstack.seed.security.Realm;
-import org.seedstack.seed.security.RoleMapping;
-import org.seedstack.seed.security.RolePermissionResolver;
-import org.seedstack.seed.security.principals.PrincipalProvider;
-import org.seedstack.seed.security.principals.Principals;
-import org.seedstack.seed.security.principals.SimplePrincipalProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.nimbusds.jose.Algorithm;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -68,6 +35,34 @@ import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenClaimsVerifier;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import com.nimbusds.openid.connect.sdk.validators.InvalidHashException;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import org.seedstack.oauth.AccessTokenValidator;
+import org.seedstack.oauth.OAuthConfig;
+import org.seedstack.oauth.OAuthProvider;
+import org.seedstack.oauth.TokenValidationException;
+import org.seedstack.seed.Configuration;
+import org.seedstack.seed.security.AuthenticationException;
+import org.seedstack.seed.security.AuthenticationInfo;
+import org.seedstack.seed.security.AuthenticationToken;
+import org.seedstack.seed.security.Realm;
+import org.seedstack.seed.security.RoleMapping;
+import org.seedstack.seed.security.RolePermissionResolver;
+import org.seedstack.seed.security.principals.PrincipalProvider;
+import org.seedstack.seed.security.principals.Principals;
+import org.seedstack.seed.security.principals.SimplePrincipalProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OAuthRealm implements Realm {
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuthRealm.class);
@@ -85,34 +80,42 @@ public class OAuthRealm implements Realm {
     private OAuthConfig oauthConfig;
 
     @Override
-    public Set<String> getRealmRoles(PrincipalProvider<?> identityPrincipal, Collection<PrincipalProvider<?>> otherPrincipals) {
+    public Set<String> getRealmRoles(PrincipalProvider<?> identityPrincipal,
+            Collection<PrincipalProvider<?>> otherPrincipals) {
         return new HashSet<>();
     }
 
     @Override
-    public AuthenticationInfo getAuthenticationInfo(AuthenticationToken authenticationToken) throws AuthenticationException {
+    public AuthenticationInfo getAuthenticationInfo(
+            AuthenticationToken authenticationToken) throws AuthenticationException {
         if (authenticationToken instanceof OAuthAuthenticationToken) {
             AccessToken accessToken = (AccessToken) authenticationToken.getCredentials();
-            String subjectId = "";
+            String subjectId;
 
             if (authenticationToken instanceof OidcAuthenticationToken) {
                 JWT idToken = (JWT) authenticationToken.getPrincipal();
+                IDTokenClaimsSet jwtClaimsSet = validateIdToken(
+                        idToken,
+                        ((OidcAuthenticationToken) authenticationToken).getNonce()
+                );
 
                 // Validate id and access token using OpenId Connect specification
-                IDTokenClaimsSet jwtClaimsSet = validateIdToken(idToken, ((OidcAuthenticationToken) authenticationToken)
-                                                .getNonce());
-                validateOicdAccessToken(accessToken, idToken.getHeader().getAlgorithm(), 
-                                        jwtClaimsSet.getAccessTokenHash());
+                validateOicdAccessToken(
+                        accessToken,
+                        idToken.getHeader().getAlgorithm(),
+                        jwtClaimsSet.getAccessTokenHash()
+                );
 
                 // Extract subject id from claim set
                 Subject subject = jwtClaimsSet.getSubject();
-                if(subject == null){
-                    throw new TokenValidationException("Unable to retireve subject from Jwt Claim Set");
+                if (subject == null) {
+                    throw new TokenValidationException("Unable to retrieve subject from JWT claim set");
                 }
                 subjectId = subject.getValue();
             } else {
-                // Validate access token with custom validator
-                validateAccessTokenWithCustomValidation(accessToken);
+                // Validate access token
+                validateAccessToken(accessToken);
+
                 // Subject id is unknown
                 subjectId = "";
             }
@@ -123,7 +126,8 @@ public class OAuthRealm implements Realm {
                 authenticationInfo.getOtherPrincipals().add(Principals.lastNamePrincipal(userInfo.getFamilyName()));
                 authenticationInfo.getOtherPrincipals().add(Principals.fullNamePrincipal(userInfo.getName()));
                 authenticationInfo.getOtherPrincipals().add(Principals.localePrincipal(userInfo.getLocale()));
-                authenticationInfo.getOtherPrincipals().add(new SimplePrincipalProvider("picture", userInfo.getPicture().toString()));
+                authenticationInfo.getOtherPrincipals()
+                        .add(new SimplePrincipalProvider("picture", userInfo.getPicture().toString()));
             });
             return authenticationInfo;
         } else {
@@ -147,7 +151,6 @@ public class OAuthRealm implements Realm {
     }
 
     private IDTokenClaimsSet validateIdToken(JWT token, Nonce nonce) {
-        
         Issuer expectedIssuer = new Issuer(oauthProvider.getIssuer()
                 .orElseThrow(() -> new TokenValidationException("Missing issuer")));
         ClientID clientId = new ClientID(oauthConfig.getClientId());
@@ -170,23 +173,28 @@ public class OAuthRealm implements Realm {
         // Check that the token is intended for this client
         List<Audience> audience = claims.getAudience();
         if (!audience.contains(new Audience(clientId))) {
-            throw new TokenValidationException("The received ID token is not intended for this client (audience mismatch)");
+            throw new TokenValidationException(
+                    "The received ID token is not intended for this client (audience mismatch)");
         }
 
         return claims;
     }
 
     private IDTokenValidator createIdTokenValidator(Issuer expectedIssuer, ClientID clientId, JWT token) {
-        if (token instanceof PlainJWT && oauthConfig.provider().isPlainJwtAllowed()) {
-           // throw new TokenValidationException("Unsecured JWT token are forbidden");
-            return new IDTokenValidator(expectedIssuer, clientId);
+        if (token instanceof PlainJWT) {
+            if (oauthConfig.openIdConnect().isUnsecuredTokenAllowed()) {
+                return new IDTokenValidator(expectedIssuer, clientId);
+            } else {
+                throw new TokenValidationException("Unsecured JWT tokens are forbidden");
+            }
         } else if (token instanceof EncryptedJWT) {
             throw new TokenValidationException("Encrypted JWT token are not supported");
         } else if (token instanceof SignedJWT) {
             JWSAlgorithm expectedAlgorithm = JWSAlgorithm.parse(oauthProvider.getSigningAlgorithm());
             if (expectedAlgorithm.getName().startsWith("HS")) {
                 // HMAC algorithm uses the client secret for validation
-                return new IDTokenValidator(expectedIssuer, clientId, expectedAlgorithm, new Secret(oauthConfig.getClientSecret()));
+                return new IDTokenValidator(expectedIssuer, clientId, expectedAlgorithm,
+                        new Secret(oauthConfig.getClientSecret()));
             } else {
                 // Other algorithms uses certificates for validation
                 URL jwkSetURL;
@@ -208,17 +216,20 @@ public class OAuthRealm implements Realm {
         return new IDTokenClaimsVerifier(expectedIssuer, clientId, nonce, 0);
     }
 
-    private void validateOicdAccessToken(AccessToken accessToken, Algorithm algorithm, AccessTokenHash accessTokenHash) {
-
+    private void validateOicdAccessToken(AccessToken accessToken, Algorithm algorithm,
+            AccessTokenHash accessTokenHash) {
         if (accessToken == null) {
             throw new TokenValidationException("Access Token is not a valid token");
         }
 
-        if (accessTokenHash == null) {
-            throw new TokenValidationException("Access Token hash (at_hash claim) is not a valid Hash claim");
+        if (algorithm == null) {
+            throw new TokenValidationException("Algorithm is valid");
         }
 
-        
+        if (accessTokenHash == null) {
+            throw new TokenValidationException("Access Token hash (at_hash claim) is not a valid hash claim");
+        }
+
         if (algorithm instanceof JWSAlgorithm) {
             JWSAlgorithm expectedAlgorithm = JWSAlgorithm.parse(oauthConfig.getSigningAlgorithm());
             if (!expectedAlgorithm.equals(algorithm)) {
@@ -226,14 +237,14 @@ public class OAuthRealm implements Realm {
                         + ") does not match the expected algorithm (" + expectedAlgorithm.getName() + ")");
             }
             try {
-                com.nimbusds.openid.connect.sdk.validators.AccessTokenValidator.validate(accessToken, (JWSAlgorithm) algorithm, accessTokenHash);
+                com.nimbusds.openid.connect.sdk.validators.AccessTokenValidator
+                        .validate(accessToken, (JWSAlgorithm) algorithm, accessTokenHash);
             } catch (InvalidHashException e) {
                 throw new TokenValidationException("Failed to validate access token", e);
             }
-        }else if((algorithm instanceof Algorithm) && (oauthConfig.provider().isPlainJwtAllowed())){ 
-            validateAccessTokenWithCustomValidation(accessToken);
-        }
-        else {
+        } else if (oauthConfig.openIdConnect().isUnsecuredTokenAllowed()) {
+            validateAccessToken(accessToken);
+        } else {
             throw new TokenValidationException("The access token algorithm is not a valid JWS algorithm");
         }
     }
@@ -245,7 +256,8 @@ public class OAuthRealm implements Realm {
                 UserInfoResponse userInfoResponse;
                 try {
                     userInfoResponse = UserInfoResponse
-                            .parse(new UserInfoRequest(userInfoEndpoint.get(), ((BearerAccessToken) accessToken)).toHTTPRequest().send());
+                            .parse(new UserInfoRequest(userInfoEndpoint.get(), ((BearerAccessToken) accessToken))
+                                    .toHTTPRequest().send());
                 } catch (IOException | ParseException e) {
                     LOGGER.error("Unable to fetch user info from {}", userInfoEndpoint.get(), e);
                     return Optional.empty();
@@ -253,7 +265,8 @@ public class OAuthRealm implements Realm {
                 if (userInfoResponse.indicatesSuccess()) {
                     return Optional.of(((UserInfoSuccessResponse) userInfoResponse).getUserInfo());
                 } else {
-                    LOGGER.error("The provider returned an error while fetching user info from {}", userInfoEndpoint.get(),
+                    LOGGER.error("The provider returned an error while fetching user info from {}",
+                            userInfoEndpoint.get(),
                             OAuthUtils.buildGenericError(((ErrorResponse) userInfoResponse)));
                     return Optional.empty();
                 }
@@ -261,10 +274,8 @@ public class OAuthRealm implements Realm {
         }
         return Optional.empty();
     }
-    
-    
-    private void validateAccessTokenWithCustomValidation(AccessToken accessToken){
-        // Validate access token with custom validator
+
+    private void validateAccessToken(AccessToken accessToken) {
         AccessTokenValidator accessTokenValidator = accessTokenValidatorProvider.get();
         if (accessTokenValidator != null) {
             accessTokenValidator.validate(accessToken.getValue());

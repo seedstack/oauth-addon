@@ -22,7 +22,7 @@ public class TokenBuilder {
     private static String accessTokenValue = "ya29.Gl0OBRawZls_r7atLBziIl051NW1xWZTp96JbPyuz8g09Ty0QvavJaQzBMtpclRxDxgq2b3pdQbUFCDaRq-qIJ7Qsw_KQmYMhxxczJsXP7DqMkiQf7CvOsZhwQkqpfE";
     private static String tokenType = "Bearer";
     private static int tokenExpiresIn = 3563;
-    private static String clientID = "243402117109-3ia596doks7tv212v8fjg8pqb2d7gjjo.apps.googleusercontent.com";
+    private static String clientID = "testClientId";
     
     
     public String buildPlainJWT(String nonce){

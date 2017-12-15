@@ -6,8 +6,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-  
-#oauth-provider: http://localhost:${sys.tomcat\.http\.port:'9090'}
+providerBaseUrl: http://localhost:${sys.tomcat\.http\.port:'9090'}${web.runtime.servlet.contextPath}
 
 rest:
   path: /api
@@ -29,24 +28,17 @@ security:
         pattern: /api/**
         filters: oauth
   oauth:
-    #discoveryDocument: https://accounts.google.com/.well-known/openid-configuration
-    redirect: http://localhost:${sys.tomcat\.http\.port:'9090'}${web.runtime.servlet.contextPath}/callback
-    #redirect: http://localhost:8080/callback
+    redirect: ${providerBaseUrl}/callback
     scopes: email
-    clientId: ${env.clientId}
-    clientSecret: ${env.clientSecret}
-    #clientId: 243402117109-3ia596doks7tv212v8fjg8pqb2d7gjjo.apps.googleusercontent.com
-    #clientSecret: 2f_1qSp1Nhah9tM8FeVGJKv6
-    accessTokenValidator: org.seedstack.oauth.validator.PlainAccessTokenValidator
-    
-    provider: 
-      authorization: http://localhost:${sys.tomcat\.http\.port:'9090'}${web.runtime.servlet.contextPath}/api/provider/authorize
-      token: http://localhost:${sys.tomcat\.http\.port:'9090'}${web.runtime.servlet.contextPath}/api/provider/create-token
-      revocation: http://localhost:${sys.tomcat\.http\.port:'9090'}${web.runtime.servlet.contextPath}/api/provider/token/revoke
-      userInfo: http://localhost:${sys.tomcat\.http\.port:'9090'}${web.runtime.servlet.contextPath}/api/provider/userInfo
+    clientId: testClientId
+    clientSecret: testClientSecret
+    accessTokenValidator: org.seedstack.oauth.fixtures.TestAccessTokenValidator
+    provider:
+      authorization: ${providerBaseUrl}/api/provider/authorize
+      token: ${providerBaseUrl}/api/provider/create-token
+      revocation: ${providerBaseUrl}/api/provider/token/revoke
+    openIdConnect:
       issuer: https://mockedserver.com
       jwks: https://mockedserver.com/oauth2/v3/certs
-      plainJwtAllowed: true
-proxy: 
-    httpProxy: "http://http.internetpsa.inetpsa.com:80"
-    noProxy: "*.inetpsa.com"
+      userInfo: ${providerBaseUrl}/api/provider/userInfo
+      unsecuredTokenAllowed: true

@@ -9,19 +9,14 @@
 package org.seedstack.oauth.internal;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
-
 import io.nuun.kernel.api.plugin.InitState;
 import io.nuun.kernel.api.plugin.context.InitContext;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Collection;
-
 import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.OAuthProvider;
 import org.seedstack.seed.SeedException;
 import org.seedstack.seed.core.internal.AbstractSeedPlugin;
-import org.seedstack.seed.web.internal.WebPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,12 +28,6 @@ public class OAuthPlugin extends AbstractSeedPlugin {
     @Override
     public String name() {
         return "oauth";
-    }
-    
-    @Override
-    protected Collection<Class<?>> dependencies() {
-        // We must initialize after the WebPlugin so we can access the contextPath in config
-        return Lists.newArrayList(WebPlugin.class);
     }
 
     @Override

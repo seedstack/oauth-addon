@@ -44,26 +44,22 @@ class ManualOAuthProvider implements OAuthProvider {
 
     @Override
     public Optional<URI> getIssuer() {
-        return Optional.ofNullable(oauthConfig.provider().getIssuer());
+        return Optional.ofNullable(oauthConfig.openIdConnect().getIssuer());
     }
 
     @Override
     public Optional<URI> getUserInfoEndpoint() {
-        return Optional.ofNullable(oauthConfig.provider().getUserInfo());
+        return Optional.ofNullable(oauthConfig.openIdConnect().getUserInfo());
     }
 
     @Override
     public Optional<URI> getJwksEndpoint() {
-        return Optional.ofNullable(oauthConfig.provider().getJwks());
+        return Optional.ofNullable(oauthConfig.openIdConnect().getJwks());
     }
 
     @Override
     public String getSigningAlgorithm() {
         return checkNotNull(oauthConfig.openIdConnect().getSigningAlgorithm(),
                 "Token signing algorithm should not be null");
-    }
-    
-    public boolean isTokenPlainJwt(){
-        return oauthConfig.provider().isPlainJwtAllowed();
     }
 }

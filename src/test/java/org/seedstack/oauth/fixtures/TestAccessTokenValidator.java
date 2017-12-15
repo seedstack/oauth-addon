@@ -6,20 +6,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package org.seedstack.oauth.validator;
+package org.seedstack.oauth.fixtures;
 
 import org.apache.commons.lang.StringUtils;
 import org.seedstack.oauth.AccessTokenValidator;
 import org.seedstack.oauth.TokenValidationException;
 
-public class PlainAccessTokenValidator implements AccessTokenValidator {
-
+public class TestAccessTokenValidator implements AccessTokenValidator {
     @Override
     public void validate(String accessToken) throws TokenValidationException {
-        
-        if(StringUtils.isEmpty(accessToken)){
+        if (StringUtils.isEmpty(accessToken)) {
             throw new TokenValidationException("Access Token is not a valid token");
         }
     }
-
 }
