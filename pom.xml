@@ -22,9 +22,9 @@
     <version>1.0.0-SNAPSHOT</version>
 
     <properties>
-        <seed.version>3.4.0-SNAPSHOT</seed.version>
+        <seed.version>3.4.2-SNAPSHOT</seed.version>
         <oauth2-oidc-sdk.version>5.38</oauth2-oidc-sdk.version>
-        <poms.version>3.1.1-SNAPSHOT</poms.version>
+        <poms.version>3.1.1</poms.version>
         <compatibility.skip>true</compatibility.skip>
 
         <bintray.package>oauth-addon</bintray.package>
@@ -76,6 +76,7 @@
                     </configuration>
                 </plugin>
             </plugins>
+            
         </pluginManagement>
     </build>
 

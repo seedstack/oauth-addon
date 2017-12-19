@@ -6,6 +6,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
+providerBaseUrl: http://localhost:${sys.tomcat\.http\.port:'9090'}${web.runtime.servlet.contextPath}
+
 rest:
   path: /api
 
@@ -13,6 +15,9 @@ security:
   realms: OAuthRealm
   web:
     urls:
+      -
+        pattern: /api/provider/**
+        filters: anon
       -
         pattern: /callback
         filters: oauthCallback
@@ -23,8 +28,17 @@ security:
         pattern: /api/**
         filters: oauth
   oauth:
-    discoveryDocument: https://accounts.google.com/.well-known/openid-configuration
-    redirect: http://localhost:8080/callback
+    redirect: ${providerBaseUrl}/callback
     scopes: email
-    clientId: ${env.clientId}
-    clientSecret: ${env.clientSecret}
+    clientId: testClientId
+    clientSecret: testClientSecret
+    accessTokenValidator: org.seedstack.oauth.fixtures.TestAccessTokenValidator
+    provider:
+      authorization: ${providerBaseUrl}/api/provider/authorize
+      token: ${providerBaseUrl}/api/provider/create-token
+      revocation: ${providerBaseUrl}/api/provider/token/revoke
+    openIdConnect:
+      issuer: https://mockedserver.com
+      jwks: https://mockedserver.com/oauth2/v3/certs
+      userInfo: ${providerBaseUrl}/api/provider/userInfo
+      unsecuredTokenAllowed: true

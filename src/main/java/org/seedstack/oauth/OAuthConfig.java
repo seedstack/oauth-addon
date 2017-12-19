@@ -103,6 +103,7 @@ public class OAuthConfig {
         private URI jwks;
         private String signingAlgorithm = "RS256";
         private URI userInfo;
+        private boolean unsecuredTokenAllowed;
 
         public boolean isEnabled() {
             return enabled;
@@ -146,6 +147,15 @@ public class OAuthConfig {
 
         public OpenIdConnectConfig setUserInfo(URI userInfo) {
             this.userInfo = userInfo;
+            return this;
+        }
+
+        public boolean isUnsecuredTokenAllowed() {
+            return unsecuredTokenAllowed;
+        }
+
+        public OpenIdConnectConfig setUnsecuredTokenAllowed(boolean unsecuredTokenAllowed) {
+            this.unsecuredTokenAllowed = unsecuredTokenAllowed;
             return this;
         }
     }
