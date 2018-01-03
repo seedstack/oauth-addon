@@ -7,13 +7,34 @@
  */
 package org.seedstack.oauth.provider.resources;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class TokenData {
     
     String access_token;
     String token_type;
     int expires_in;
     String id_token;
+    String scope;
+    //List<String> scope = new ArrayList<String>();
+    private boolean buildonlyAccessToken;
     
+    public boolean getOnlyAccessToken() {
+        return buildonlyAccessToken;
+    }
+
+
+    public void buildonlyAccessToken(boolean buildonlyAccessToken) {
+        this.buildonlyAccessToken = buildonlyAccessToken;
+    }
+    
+   public String getScope() {
+        return scope;
+    }
+    public void setScope(String scope) {
+        this.scope= scope;
+    }
     public String getAccess_token() {
         return access_token;
     }

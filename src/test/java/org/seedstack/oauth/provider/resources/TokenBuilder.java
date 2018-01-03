@@ -8,7 +8,7 @@
 package org.seedstack.oauth.provider.resources;
 
 import java.util.Date;
-
+import java.util.List;
 import com.nimbusds.jose.PlainHeader;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.PlainJWT;
@@ -18,11 +18,11 @@ public class TokenBuilder {
     private boolean testInvalidNonce; 
     private boolean testTokenExpiry;
     private boolean testInvalidAudience;
-    
+    private boolean buildOnlyAccessToken;
     private static String accessTokenValue = "ya29.Gl0OBRawZls_r7atLBziIl051NW1xWZTp96JbPyuz8g09Ty0QvavJaQzBMtpclRxDxgq2b3pdQbUFCDaRq-qIJ7Qsw_KQmYMhxxczJsXP7DqMkiQf7CvOsZhwQkqpfE";
     private static String tokenType = "Bearer";
     private static int tokenExpiresIn = 3563;
-    private static String clientID = "testClientId";
+    private  String clientID = "";
     
     
     public String buildPlainJWT(String nonce){
@@ -56,12 +56,17 @@ public class TokenBuilder {
     }
     
     
-    public TokenData buildToken(String nonce){
+    public TokenData buildToken(String nonce,List<String> scopes){
         TokenData td = new TokenData();
         td.setAccess_token(accessTokenValue);
         td.setExpires_in(tokenExpiresIn);
         td.setToken_type(tokenType);
-        td.setId_token(buildPlainJWT(nonce));
+        td.setScope(scopes.toString());
+        if(!buildOnlyAccessToken){
+            
+            td.setId_token(buildPlainJWT(nonce));
+        }
+        
         return td;
     }
 
@@ -75,6 +80,14 @@ public class TokenBuilder {
 
     public void setTestInvalidAudience(boolean testInvalidAudience) {
         this.testInvalidAudience = testInvalidAudience;
+    }
+    
+    public void setTestClientId(String clientID){
+        this.clientID=clientID;
+    }
+    
+    public void setFlagForAccessToken(boolean buildOnlyAccessToken){
+        this.buildOnlyAccessToken = buildOnlyAccessToken;
     }
     
 }
