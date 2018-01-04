@@ -12,6 +12,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.seed.Configuration;
 
 
@@ -27,13 +28,21 @@ public class TokenResource {
     @Configuration("testConfig.testInvalidNonce")
     private boolean testInvalidNonce;
     
+    @Configuration
+    private OAuthConfig oauthConfig;
+    
+    @Configuration("fetchOnlyAccessToken")
+    private boolean buildOnlyAccessToken;
+    
     
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createToken(){
+    public Response createttoken(){
+
         NonceHandler n = new NonceHandler();
         String nonce = n.getNonce();
         n.deleteFile();
+       
         return Response.ok(tokenData(nonce)).build();
     }
     
@@ -42,7 +51,9 @@ public class TokenResource {
         tb.setTestInvalidNonce(testInvalidNonce);
         tb.setTestInvalidAudience(testInvalidAudience);
         tb.setTestTokenExpiry(testTokenExpiry);
-        return tb.buildToken(nonce);
+        tb.setTestClientId(oauthConfig.getClientId());
+        tb.setFlagForAccessToken(buildOnlyAccessToken);
+        return tb.buildToken(nonce,oauthConfig.getScopes());
     }
     
 }
