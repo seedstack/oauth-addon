@@ -8,8 +8,13 @@
 
 package org.seedstack.oauth;
 
-import static com.jayway.restassured.RestAssured.given;
+import static org.junit.Assert.assertNotNull;
+
 import java.net.URL;
+
+import javax.inject.Inject;
+
+import org.apache.shiro.authc.AuthenticationToken;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -18,23 +23,26 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.seedstack.seed.it.AbstractSeedWebIT;
 
-public class OAuthClientCredsGrantIT extends AbstractSeedWebIT{
+public class OAuthClientCredsFlowIT extends AbstractSeedWebIT{
+
+    @Inject
+    private OAuthService oauthService;
+    
     
     @ArquillianResource
     private URL baseURL;
 
     @Deployment
     public static WebArchive createDeployment() {
-        return ShrinkWrap.create(WebArchive.class).addAsResource("client-creds-grant-special-config.yaml", "META-INF/configuration/client-creds-grant-special-config.yaml");
+        return ShrinkWrap.create(WebArchive.class);
     }
+    
     
     @Test
     @RunAsClient
-    public void request_to_fetch_access_token_should_succeed() {
-         given().expect()
-        .statusCode(200)
-        .when()
-        .get(baseURL.toString() + "profileWithClientCredsGrant.html");
+    public void method_should_return_authentication_token(){
+        AuthenticationToken token = oauthService.getTokenFromClientCredentials();
+        assertNotNull(token);
     }
-
+    
 }

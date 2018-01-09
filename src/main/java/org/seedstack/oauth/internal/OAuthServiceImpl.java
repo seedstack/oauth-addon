@@ -8,26 +8,11 @@
 
 package org.seedstack.oauth.internal;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.seedstack.oauth.internal.OAuthUtils.buildGenericError;
-
-import java.io.IOException;
-import java.util.List;
-
-import javax.inject.Inject;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-
-import org.apache.shiro.authc.AuthenticationException;
-import org.apache.shiro.authc.AuthenticationToken;
-import org.apache.shiro.subject.Subject;
-import org.apache.shiro.web.filter.authc.AuthenticatingFilter;
 import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.OAuthProvider;
+import org.seedstack.oauth.OAuthService;
 import org.seedstack.seed.Configuration;
 import org.seedstack.seed.SeedException;
-import org.seedstack.seed.web.SecurityFilter;
-import org.seedstack.seed.web.security.internal.SessionRegenerationCapable;
 
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationGrant;
@@ -41,45 +26,28 @@ import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.token.Tokens;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.seedstack.oauth.internal.OAuthUtils.buildGenericError;
+import java.io.IOException;
+import java.util.List;
+import javax.inject.Inject;
 
 
-@SecurityFilter("oauthClientCreds")
-public class OAuthClientCredsGrantFilter extends AuthenticatingFilter implements SessionRegenerationCapable {
+import org.apache.shiro.authc.AuthenticationToken;
 
-    @Inject
-    private OAuthProvider oauthProvider;
+public class OAuthServiceImpl implements OAuthService {
+
     @Configuration
     private OAuthConfig oauthConfig;
-
-    @Override
-    protected boolean onAccessDenied(ServletRequest request, ServletResponse response) throws Exception {
-        return executeLogin(request, response);
-    }
-   
     
-    @Override
-    protected boolean executeLogin(ServletRequest request, ServletResponse response) throws Exception {
-        AuthenticationToken token = createToken(request, response);
-        if (token == null) {
-            String msg = "createToken method implementation returned null. A valid non-null AuthenticationToken " +
-                    "must be created in order to execute a login attempt.";
-            throw new IllegalStateException(msg);
-        }
-        try {
-            Subject subject = getSubject(request, response);
-            subject.login(token);
-            return onLoginSuccess(token, subject, request, response);
-        } catch (AuthenticationException e) {
-            return onLoginFailure(token, e, request, response);
-        }
-    }
+    @Inject
+    private OAuthProvider oauthProvider;
     
-    
-    @Override
-    protected AuthenticationToken createToken(ServletRequest request, ServletResponse response) throws Exception {
+    public AuthenticationToken getTokenFromClientCredentials() {
         Tokens tokens = requestTokens(new ClientCredentialsGrant());
         return new OAuthAuthenticationToken(tokens.getAccessToken());
     }
+    
     
     private Tokens requestTokens(AuthorizationGrant authorizationGrant) {
         TokenRequest tokenRequest = new TokenRequest(
@@ -103,6 +71,7 @@ public class OAuthClientCredsGrantFilter extends AuthenticatingFilter implements
         }
     }
     
+    
     private Scope createScope(List<String> scopes) {
         if (scopes == null) {
             return new Scope();
@@ -110,6 +79,5 @@ public class OAuthClientCredsGrantFilter extends AuthenticatingFilter implements
             return new Scope(scopes.toArray(new String[scopes.size()]));
         }
     }
-    
 
 }

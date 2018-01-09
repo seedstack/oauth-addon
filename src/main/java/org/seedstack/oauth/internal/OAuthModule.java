@@ -12,6 +12,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.util.Providers;
 import org.seedstack.oauth.AccessTokenValidator;
 import org.seedstack.oauth.OAuthProvider;
+import org.seedstack.oauth.OAuthService;
 
 class OAuthModule extends AbstractModule {
     private final OAuthProvider oauthProvider;
@@ -25,6 +26,7 @@ class OAuthModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(OAuthProvider.class).toInstance(oauthProvider);
+        bind(OAuthService.class).to(OAuthServiceImpl.class);
         if (accessTokenValidatorClass != null) {
             bind(AccessTokenValidator.class).to(accessTokenValidatorClass);
         } else {
