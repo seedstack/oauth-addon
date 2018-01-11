@@ -6,7 +6,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-providerBaseUrl: http://localhost:${sys.tomcat\.http\.port:'8080'}${web.runtime.servlet.contextPath}
+providerBaseUrl: http://localhost:${sys.tomcat\.http\.port:'9090'}${web.runtime.servlet.contextPath}
 
 
 rest:
@@ -22,9 +22,7 @@ security:
       -
         pattern: /callback
         filters: oauthCallback
-      -
-        pattern: /profileWithClientCredsGrant.html
-        filters: oauthClientCreds
+      
       -
         pattern: /profile.html
         filters: oauth
