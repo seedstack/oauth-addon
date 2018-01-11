@@ -8,7 +8,6 @@
 
 providerBaseUrl: http://localhost:${sys.tomcat\.http\.port:'9090'}${web.runtime.servlet.contextPath}
 
-
 rest:
   path: /api
 
@@ -22,7 +21,6 @@ security:
       -
         pattern: /callback
         filters: oauthCallback
-      
       -
         pattern: /profile.html
         filters: oauth
@@ -30,15 +28,11 @@ security:
         pattern: /api/**
         filters: oauth
   oauth:
-    #discoveryDocument: https://accounts.google.com/.well-known/openid-configuration
     redirect: ${providerBaseUrl}/callback
     scopes: email
-    #clientId: testClientId
-    #clientSecret: testClientSecret
+    clientId: testClientId
+    clientSecret: testClientSecret
     accessTokenValidator: org.seedstack.oauth.fixtures.TestAccessTokenValidator
-    clientId: 243402117109-o2b55ti7o7nte0klnh49ki06f1nnifd1.apps.googleusercontent.com
-    clientSecret: 2Awg8Jvjpve4pDR7kgvFacgH
-    #validator: org.seedstack.oauth.validators.JwtAccessTokenValidator
     provider:
       authorization: ${providerBaseUrl}/api/provider/authorize
       token: ${providerBaseUrl}/api/provider/create-token
@@ -48,6 +42,13 @@ security:
       jwks: https://mockedserver.com/oauth2/v3/certs
       userInfo: ${providerBaseUrl}/api/provider/userInfo
       unsecuredTokenAllowed: true
-proxy: 
-    httpProxy: "http://http.internetpsa.inetpsa.com:80"
-    noProxy: "*.inetpsa.com"
+  oauth<google>:
+    redirect: http://localhost:8080/callback
+    discoveryDocument: https://accounts.google.com/.well-known/openid-configuration
+    clientId: ${env.clientId}
+    clientSecret: ${env.clientSecret}
+  oauth<psa>:
+    redirect: http://localhost:8080/callback
+    discoveryDocument: https://diam-idp.test.inetpsa.com/am/.well-known/openid-configuration?realm=/psa/secu
+    clientId: ${env.clientId}
+    clientSecret: ${env.clientSecret}

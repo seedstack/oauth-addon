@@ -254,19 +254,21 @@ public class OAuthRealm implements Realm {
             Optional<URI> userInfoEndpoint = oauthProvider.getUserInfoEndpoint();
             if (userInfoEndpoint.isPresent()) {
                 UserInfoResponse userInfoResponse;
+                URI endpointURI = userInfoEndpoint.get();
+
                 try {
                     userInfoResponse = UserInfoResponse
-                            .parse(new UserInfoRequest(userInfoEndpoint.get(), ((BearerAccessToken) accessToken))
+                            .parse(new UserInfoRequest(endpointURI, ((BearerAccessToken) accessToken))
                                     .toHTTPRequest().send());
                 } catch (IOException | ParseException e) {
-                    LOGGER.error("Unable to fetch user info from {}", userInfoEndpoint.get(), e);
+                    LOGGER.error("Unable to fetch user info from {}", endpointURI, e);
                     return Optional.empty();
                 }
                 if (userInfoResponse.indicatesSuccess()) {
                     return Optional.of(((UserInfoSuccessResponse) userInfoResponse).getUserInfo());
                 } else {
                     LOGGER.error("The provider returned an error while fetching user info from {}",
-                            userInfoEndpoint.get(),
+                            endpointURI,
                             OAuthUtils.buildGenericError(((ErrorResponse) userInfoResponse)));
                     return Optional.empty();
                 }

@@ -149,12 +149,18 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
     }
 
     private Tokens requestTokens(AuthorizationGrant authorizationGrant) {
+        URI endpointURI = oauthProvider.getTokenEndpoint();
+        Map<String, String> parameters = OAuthUtils.extractQueryParameters(endpointURI);
+        endpointURI = OAuthUtils.stripQueryString(endpointURI);
+
         TokenRequest tokenRequest = new TokenRequest(
-                checkNotNull(oauthProvider.getTokenEndpoint(), "Missing token endpoint"),
+                checkNotNull(endpointURI, "Missing token endpoint"),
                 new ClientSecretBasic(
                         new ClientID(checkNotNull(oauthConfig.getClientId(), "Missing client identifier")),
                         new Secret(checkNotNull(oauthConfig.getClientSecret(), "Missing client secret"))),
-                authorizationGrant);
+                authorizationGrant,
+                null,
+                parameters);
 
         TokenResponse tokenResponse;
         try {

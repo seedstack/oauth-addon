@@ -11,9 +11,7 @@ package org.seedstack.oauth;
 import static org.junit.Assert.assertNotNull;
 
 import java.net.URL;
-
 import javax.inject.Inject;
-
 import org.apache.shiro.authc.AuthenticationToken;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
@@ -23,12 +21,9 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.seedstack.seed.it.AbstractSeedWebIT;
 
-public class OAuthClientCredsFlowIT extends AbstractSeedWebIT{
-
+public class OAuthClientCredsFlowIT extends AbstractSeedWebIT {
     @Inject
     private OAuthService oauthService;
-    
-    
     @ArquillianResource
     private URL baseURL;
 
@@ -36,13 +31,11 @@ public class OAuthClientCredsFlowIT extends AbstractSeedWebIT{
     public static WebArchive createDeployment() {
         return ShrinkWrap.create(WebArchive.class);
     }
-    
-    
+
     @Test
     @RunAsClient
-    public void method_should_return_authentication_token(){
+    public void getAccessTokenFromCredentials() {
         AuthenticationToken token = oauthService.getTokenFromClientCredentials();
         assertNotNull(token);
     }
-    
 }

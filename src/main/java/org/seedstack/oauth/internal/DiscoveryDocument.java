@@ -8,10 +8,12 @@
 
 package org.seedstack.oauth.internal;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 class DiscoveryDocument {
     private URI issuer;
     @JsonProperty("authorization_endpoint")
@@ -20,126 +22,116 @@ class DiscoveryDocument {
     private URI tokenEndpoint;
     @JsonProperty("userinfo_endpoint")
     private URI userinfoEndpoint;
-    @JsonProperty("revocation_endpoint")
-    private URI revocationEndpoint;
     @JsonProperty("jwks_uri")
     private URI jwksUri;
+    @JsonProperty("registration_endpoint")
+    private URI registrationEndpoint;
+    @JsonProperty("scopes_supported")
+    private List<String> scopesSupported;
     @JsonProperty("response_types_supported")
     private List<String> responseTypesSupported;
     @JsonProperty("subject_types_supported")
     private List<String> subjectTypesSupported;
     @JsonProperty("id_token_signing_alg_values_supported")
     private List<String> idTokenSigningAlgValuesSupported;
-    @JsonProperty("scopes_supported")
-    private List<String> scopesSupported;
-    @JsonProperty("token_endpoint_auth_methods_supported")
-    private List<String> tokenEndpointAuthMethodsSupported;
     @JsonProperty("claims_supported")
     private List<String> claimsSupported;
-    @JsonProperty("code_challenge_methods_supported")
-    private List<String> codeChallengeMethodsSupported;
+    @JsonProperty("revocation_endpoint")
+    private URI revocationEndpoint;
 
-    URI getIssuer() {
+    public URI getIssuer() {
         return issuer;
     }
 
-    void setIssuer(URI issuer) {
+    public void setIssuer(URI issuer) {
         this.issuer = issuer;
     }
 
-    URI getAuthorizationEndpoint() {
+    public URI getAuthorizationEndpoint() {
         return authorizationEndpoint;
     }
 
-    void setAuthorizationEndpoint(URI authorizationEndpoint) {
+    public void setAuthorizationEndpoint(URI authorizationEndpoint) {
         this.authorizationEndpoint = authorizationEndpoint;
     }
 
-    URI getTokenEndpoint() {
+    public URI getTokenEndpoint() {
         return tokenEndpoint;
     }
 
-    void setTokenEndpoint(URI tokenEndpoint) {
+    public void setTokenEndpoint(URI tokenEndpoint) {
         this.tokenEndpoint = tokenEndpoint;
     }
 
-    URI getUserinfoEndpoint() {
+    public URI getUserinfoEndpoint() {
         return userinfoEndpoint;
     }
 
-    void setUserinfoEndpoint(URI userinfoEndpoint) {
+    public void setUserinfoEndpoint(URI userinfoEndpoint) {
         this.userinfoEndpoint = userinfoEndpoint;
     }
 
-    URI getRevocationEndpoint() {
-        return revocationEndpoint;
-    }
-
-    void setRevocationEndpoint(URI revocationEndpoint) {
-        this.revocationEndpoint = revocationEndpoint;
-    }
-
-    URI getJwksUri() {
+    public URI getJwksUri() {
         return jwksUri;
     }
 
-    void setJwksUri(URI jwksUri) {
+    public void setJwksUri(URI jwksUri) {
         this.jwksUri = jwksUri;
     }
 
-    List<String> getResponseTypesSupported() {
-        return responseTypesSupported;
+    public URI getRegistrationEndpoint() {
+        return registrationEndpoint;
     }
 
-    void setResponseTypesSupported(List<String> responseTypesSupported) {
-        this.responseTypesSupported = responseTypesSupported;
+    public void setRegistrationEndpoint(URI registrationEndpoint) {
+        this.registrationEndpoint = registrationEndpoint;
     }
 
-    List<String> getSubjectTypesSupported() {
-        return subjectTypesSupported;
-    }
-
-    void setSubjectTypesSupported(List<String> subjectTypesSupported) {
-        this.subjectTypesSupported = subjectTypesSupported;
-    }
-
-    List<String> getIdTokenSigningAlgValuesSupported() {
-        return idTokenSigningAlgValuesSupported;
-    }
-
-    void setIdTokenSigningAlgValuesSupported(List<String> idTokenSigningAlgValuesSupported) {
-        this.idTokenSigningAlgValuesSupported = idTokenSigningAlgValuesSupported;
-    }
-
-    List<String> getScopesSupported() {
+    public List<String> getScopesSupported() {
         return scopesSupported;
     }
 
-    void setScopesSupported(List<String> scopesSupported) {
+    public void setScopesSupported(List<String> scopesSupported) {
         this.scopesSupported = scopesSupported;
     }
 
-    List<String> getTokenEndpointAuthMethodsSupported() {
-        return tokenEndpointAuthMethodsSupported;
+    public List<String> getResponseTypesSupported() {
+        return responseTypesSupported;
     }
 
-    void setTokenEndpointAuthMethodsSupported(List<String> tokenEndpointAuthMethodsSupported) {
-        this.tokenEndpointAuthMethodsSupported = tokenEndpointAuthMethodsSupported;
+    public void setResponseTypesSupported(List<String> responseTypesSupported) {
+        this.responseTypesSupported = responseTypesSupported;
     }
 
-    List<String> getClaimsSupported() {
+    public List<String> getSubjectTypesSupported() {
+        return subjectTypesSupported;
+    }
+
+    public void setSubjectTypesSupported(List<String> subjectTypesSupported) {
+        this.subjectTypesSupported = subjectTypesSupported;
+    }
+
+    public List<String> getIdTokenSigningAlgValuesSupported() {
+        return idTokenSigningAlgValuesSupported;
+    }
+
+    public void setIdTokenSigningAlgValuesSupported(List<String> idTokenSigningAlgValuesSupported) {
+        this.idTokenSigningAlgValuesSupported = idTokenSigningAlgValuesSupported;
+    }
+
+    public List<String> getClaimsSupported() {
         return claimsSupported;
     }
 
-    void setClaimsSupported(List<String> claimsSupported) {
+    public void setClaimsSupported(List<String> claimsSupported) {
         this.claimsSupported = claimsSupported;
     }
 
-    List<String> getCodeChallengeMethodsSupported() {
-        return codeChallengeMethodsSupported;
+    public URI getRevocationEndpoint() {
+        return revocationEndpoint;
     }
 
-    void setCodeChallengeMethodsSupported(List<String> codeChallengeMethodsSupported) {
-        this.codeChallengeMethodsSupported = codeChallengeMethodsSupported;
+    public void setRevocationEndpoint(URI revocationEndpoint) {
+        this.revocationEndpoint = revocationEndpoint;
     }
 }

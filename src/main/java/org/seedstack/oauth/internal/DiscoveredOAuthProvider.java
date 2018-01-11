@@ -30,9 +30,14 @@ class DiscoveredOAuthProvider implements OAuthProvider {
     @Override
     public boolean isOpenIdCapable() {
         List<String> scopesSupported = oidcDiscoveryDocument.getScopesSupported();
-        return oauthConfig.openIdConnect().isEnabled()
-                && scopesSupported != null
-                && scopesSupported.contains(OIDCScopeValue.OPENID.getValue());
+        if (scopesSupported == null) {
+            // Base decision on configuration only as provider doesn't advertise its OpenID Connect capability
+            return oauthConfig.openIdConnect().isEnabled();
+        } else {
+            // Check if the server declares to support an openid scope
+            return oauthConfig.openIdConnect().isEnabled()
+                    && scopesSupported.contains(OIDCScopeValue.OPENID.getValue());
+        }
     }
 
     @Override

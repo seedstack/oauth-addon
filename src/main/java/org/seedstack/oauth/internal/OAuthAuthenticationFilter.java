@@ -25,6 +25,7 @@ import com.nimbusds.openid.connect.sdk.OIDCScopeValue;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.servlet.ServletRequest;
@@ -112,20 +113,44 @@ public class OAuthAuthenticationFilter extends AuthenticatingFilter implements S
     }
 
     private URI buildAuthorizationURI(State state) {
-        return new AuthorizationRequest.Builder(new ResponseType(ResponseType.Value.CODE),
+        URI endpointURI = oauthProvider.getAuthorizationEndpoint();
+        Map<String, String> parameters = OAuthUtils.extractQueryParameters(endpointURI);
+        endpointURI = OAuthUtils.stripQueryString(endpointURI);
+
+        AuthorizationRequest.Builder builder = new AuthorizationRequest.Builder(
+                new ResponseType(ResponseType.Value.CODE),
                 new ClientID(checkNotNull(oauthConfig.getClientId(), "Missing client identifier")))
                 .scope(createScope(oauthConfig.getScopes()))
                 .redirectionURI(checkNotNull(oauthConfig.getRedirect(), "Missing redirect URI"))
-                .endpointURI(oauthProvider.getAuthorizationEndpoint()).state(state).build().toURI();
+                .endpointURI(endpointURI)
+                .state(state);
+
+        for (Map.Entry<String, String> parameter : parameters.entrySet()) {
+            builder.customParameter(parameter.getKey(), parameter.getValue());
+        }
+
+        return builder.build().toURI();
     }
 
     private URI buildAuthenticationURI(State state, Nonce nonce) {
-        return new AuthenticationRequest.Builder(new ResponseType(ResponseType.Value.CODE),
+        URI endpointURI = oauthProvider.getAuthorizationEndpoint();
+        Map<String, String> parameters = OAuthUtils.extractQueryParameters(endpointURI);
+        endpointURI = OAuthUtils.stripQueryString(endpointURI);
+
+        AuthenticationRequest.Builder builder = new AuthenticationRequest.Builder(
+                new ResponseType(ResponseType.Value.CODE),
                 createOidcScope(oauthConfig.getScopes()),
                 new ClientID(checkNotNull(oauthConfig.getClientId(), "Missing client identifier")),
                 checkNotNull(oauthConfig.getRedirect(), "Missing redirect URI"))
-                .endpointURI(oauthProvider.getAuthorizationEndpoint()).state(state)
-                .nonce(nonce).build().toURI();
+                .endpointURI(endpointURI)
+                .state(state)
+                .nonce(nonce);
+
+        for (Map.Entry<String, String> parameter : parameters.entrySet()) {
+            builder.customParameter(parameter.getKey(), parameter.getValue());
+        }
+
+        return builder.build().toURI();
     }
 
     private void saveState(State state, Nonce nonce) {
