@@ -39,9 +39,9 @@ security:
       revocation: ${providerBaseUrl}/api/provider/token/revoke
     openIdConnect:
       issuer: https://mockedserver.com
-      jwks: https://mockedserver.com/oauth2/v3/certs
+      jwks: ${providerBaseUrl}/JWKset.json
       userInfo: ${providerBaseUrl}/api/provider/userInfo
-      unsecuredTokenAllowed: true
+      unsecuredTokenAllowed: false
   oauth<google>:
     redirect: http://localhost:8080/callback
     discoveryDocument: https://accounts.google.com/.well-known/openid-configuration
@@ -52,3 +52,6 @@ security:
     discoveryDocument: https://diam-idp.test.inetpsa.com/am/.well-known/openid-configuration?realm=/psa/secu
     clientId: ${env.clientId}
     clientSecret: ${env.clientSecret}
+proxy: 
+    httpProxy: "http://http.internetpsa.inetpsa.com:80"
+    noProxy: "*.inetpsa.com"
