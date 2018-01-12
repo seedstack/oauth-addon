@@ -37,7 +37,7 @@ public class TokenResource {
     
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createttoken(){
+    public Response createToken(){
 
         NonceHandler n = new NonceHandler();
         String nonce = n.getNonce();
@@ -47,11 +47,10 @@ public class TokenResource {
     }
     
     private TokenData tokenData(String nonce){
-        TokenBuilder tb = new TokenBuilder();
+        TokenBuilder tb = new TokenBuilder(oauthConfig);
         tb.setTestInvalidNonce(testInvalidNonce);
         tb.setTestInvalidAudience(testInvalidAudience);
         tb.setTestTokenExpiry(testTokenExpiry);
-        tb.setTestClientId(oauthConfig.getClientId());
         tb.setFlagForAccessToken(buildOnlyAccessToken);
         return tb.buildToken(nonce,oauthConfig.getScopes());
     }
