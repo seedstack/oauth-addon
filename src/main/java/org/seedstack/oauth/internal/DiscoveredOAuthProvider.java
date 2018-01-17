@@ -42,33 +42,64 @@ class DiscoveredOAuthProvider implements OAuthProvider {
 
     @Override
     public Optional<URI> getIssuer() {
-        return Optional.ofNullable(oidcDiscoveryDocument.getIssuer());
+        return Optional.ofNullable(
+                or(
+                        oauthConfig.openIdConnect().getIssuer(),
+                        oidcDiscoveryDocument.getIssuer()
+                )
+        );
     }
 
     @Override
     public URI getAuthorizationEndpoint() {
-        return checkNotNull(oidcDiscoveryDocument.getAuthorizationEndpoint(),
-                "Authorization endpoint should not be null");
+        return checkNotNull(
+                or(
+                        oauthConfig.provider().getAuthorization(),
+                        oidcDiscoveryDocument.getAuthorizationEndpoint()
+                ),
+                "Authorization endpoint should not be null"
+        );
     }
 
     @Override
     public URI getTokenEndpoint() {
-        return checkNotNull(oidcDiscoveryDocument.getTokenEndpoint(), "Token endpoint should not be null");
+        return checkNotNull(
+                or(
+                        oauthConfig.provider().getToken(),
+                        oidcDiscoveryDocument.getTokenEndpoint()
+                ),
+                "Token endpoint should not be null"
+        );
     }
 
     @Override
     public Optional<URI> getUserInfoEndpoint() {
-        return Optional.ofNullable(oidcDiscoveryDocument.getUserinfoEndpoint());
+        return Optional.ofNullable(
+                or(
+                        oauthConfig.openIdConnect().getUserInfo(),
+                        oidcDiscoveryDocument.getUserinfoEndpoint()
+                )
+        );
     }
 
     @Override
     public Optional<URI> getRevocationEndpoint() {
-        return Optional.ofNullable(oidcDiscoveryDocument.getRevocationEndpoint());
+        return Optional.ofNullable(
+                or(
+                        oauthConfig.provider().getRevocation(),
+                        oidcDiscoveryDocument.getRevocationEndpoint()
+                )
+        );
     }
 
     @Override
     public Optional<URI> getJwksEndpoint() {
-        return Optional.ofNullable(oidcDiscoveryDocument.getJwksUri());
+        return Optional.ofNullable(
+                or(
+                        oauthConfig.openIdConnect().getJwks(),
+                        oidcDiscoveryDocument.getJwksUri()
+                )
+        );
     }
 
     @Override
@@ -83,5 +114,9 @@ class DiscoveredOAuthProvider implements OAuthProvider {
 
         }
         return signingAlgorithm;
+    }
+
+    private static <T> T or(T first, T second) {
+        return first != null ? first : second;
     }
 }

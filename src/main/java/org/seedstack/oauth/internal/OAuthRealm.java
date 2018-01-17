@@ -122,12 +122,23 @@ public class OAuthRealm implements Realm {
 
             AuthenticationInfo authenticationInfo = new AuthenticationInfo(subjectId, accessToken);
             fetchUserInfo(accessToken).ifPresent(userInfo -> {
-                authenticationInfo.getOtherPrincipals().add(Principals.firstNamePrincipal(userInfo.getGivenName()));
-                authenticationInfo.getOtherPrincipals().add(Principals.lastNamePrincipal(userInfo.getFamilyName()));
-                authenticationInfo.getOtherPrincipals().add(Principals.fullNamePrincipal(userInfo.getName()));
-                authenticationInfo.getOtherPrincipals().add(Principals.localePrincipal(userInfo.getLocale()));
-                authenticationInfo.getOtherPrincipals()
-                        .add(new SimplePrincipalProvider("picture", userInfo.getPicture().toString()));
+                Collection<PrincipalProvider<?>> otherPrincipals = authenticationInfo.getOtherPrincipals();
+                Optional.ofNullable(userInfo.getGivenName())
+                        .map(Principals::firstNamePrincipal)
+                        .ifPresent(otherPrincipals::add);
+                Optional.ofNullable(userInfo.getFamilyName())
+                        .map(Principals::lastNamePrincipal)
+                        .ifPresent(otherPrincipals::add);
+                Optional.ofNullable(userInfo.getName())
+                        .map(Principals::fullNamePrincipal)
+                        .ifPresent(otherPrincipals::add);
+                Optional.ofNullable(userInfo.getLocale())
+                        .map(Principals::localePrincipal)
+                        .ifPresent(otherPrincipals::add);
+                Optional.ofNullable(userInfo.getPicture())
+                        .map(String::valueOf)
+                        .map((picture) -> new SimplePrincipalProvider("picture", picture))
+                        .ifPresent(otherPrincipals::add);
             });
             return authenticationInfo;
         } else {

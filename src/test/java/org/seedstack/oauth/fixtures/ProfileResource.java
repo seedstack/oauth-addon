@@ -8,12 +8,14 @@
 
 package org.seedstack.oauth.fixtures;
 
+import java.util.Optional;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import org.seedstack.seed.security.SecuritySupport;
 import org.seedstack.seed.security.principals.Principals;
+import org.seedstack.seed.security.principals.SimplePrincipalProvider;
 
 @Path("/profile")
 public class ProfileResource {
@@ -24,14 +26,18 @@ public class ProfileResource {
     @Produces("application/json")
     public ProfileRepresentation sayHello() {
         ProfileRepresentation profileRepresentation = new ProfileRepresentation();
-        profileRepresentation
-                .setFirstName(securitySupport.getSimplePrincipalByName(Principals.FIRST_NAME).getPrincipal());
-        profileRepresentation
-                .setLastName(securitySupport.getSimplePrincipalByName(Principals.LAST_NAME).getPrincipal());
-        profileRepresentation
-                .setFullName(securitySupport.getSimplePrincipalByName(Principals.FULL_NAME).getPrincipal());
-        profileRepresentation
-                .setPictureUrl(securitySupport.getSimplePrincipalByName("picture").getPrincipal());
+        Optional.ofNullable(securitySupport.getSimplePrincipalByName(Principals.FIRST_NAME))
+                .map(SimplePrincipalProvider::getPrincipal)
+                .ifPresent(profileRepresentation::setFirstName);
+        Optional.ofNullable(securitySupport.getSimplePrincipalByName(Principals.LAST_NAME))
+                .map(SimplePrincipalProvider::getPrincipal)
+                .ifPresent(profileRepresentation::setLastName);
+        Optional.ofNullable(securitySupport.getSimplePrincipalByName(Principals.FULL_NAME))
+                .map(SimplePrincipalProvider::getPrincipal)
+                .ifPresent(profileRepresentation::setFullName);
+        Optional.ofNullable(securitySupport.getSimplePrincipalByName("picture"))
+                .map(SimplePrincipalProvider::getPrincipal)
+                .ifPresent(profileRepresentation::setPictureUrl);
         return profileRepresentation;
     }
 }

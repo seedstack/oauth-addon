@@ -29,9 +29,9 @@ security:
         filters: oauth
   oauth:
     redirect: ${providerBaseUrl}/callback
-    scopes: email
     clientId: testClientId
     clientSecret: testClientSecret
+    scopes: email
     accessTokenValidator: org.seedstack.oauth.fixtures.TestAccessTokenValidator
     provider:
       authorization: ${providerBaseUrl}/api/provider/authorize
@@ -42,16 +42,24 @@ security:
       jwks: ${providerBaseUrl}/JWKset.json
       userInfo: ${providerBaseUrl}/api/provider/userInfo
       unsecuredTokenAllowed: false
+
   oauth<google>:
     redirect: http://localhost:8080/callback
     discoveryDocument: https://accounts.google.com/.well-known/openid-configuration
+    scopes: email
     clientId: ${env.clientId}
     clientSecret: ${env.clientSecret}
+
   oauth<psa>:
+    openIdConnect:
+      # Override issuer to workaround OpenAM #5326
+      # https://bugster.forgerock.org/jira/si/jira.issueviews:issue-html/OPENAM-5326/OPENAM-5326.html
+      issuer: https://diam-idp.test.inetpsa.com/am
+    scopes: mail
     redirect: http://localhost:8080/callback
-    discoveryDocument: https://diam-idp.test.inetpsa.com/am/.well-known/openid-configuration?realm=/psa/secu
-    clientId: ${env.clientId}
-    clientSecret: ${env.clientSecret}
+    discoveryDocument: https://diam-idp.test.inetpsa.com/am/.well-known/openid-configuration?realm=/psa/seed
+    clientId: seedstack
+    clientSecret: seedstack
 proxy: 
     httpProxy: "http://http.internetpsa.inetpsa.com:80"
     noProxy: "*.inetpsa.com"
