@@ -9,7 +9,6 @@
 package org.seedstack.oauth;
 
 import static org.junit.Assert.assertNotNull;
-
 import java.net.URL;
 import javax.inject.Inject;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -20,13 +19,21 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.seedstack.seed.it.AbstractSeedWebIT;
+//import org.apache.shiro.SecurityUtils;
+//import org.apache.shiro.mgt.SecurityManager;
+//import org.apache.shiro.util.ThreadContext;
 
 public class OAuthClientCredsFlowIT extends AbstractSeedWebIT {
+    
     @Inject
     private OAuthService oauthService;
+    
     @ArquillianResource
     private URL baseURL;
 
+    /*@Inject
+    private SecurityManager securityManager;*/
+    
     @Deployment
     public static WebArchive createDeployment() {
         return ShrinkWrap.create(WebArchive.class);
@@ -38,4 +45,12 @@ public class OAuthClientCredsFlowIT extends AbstractSeedWebIT {
         AuthenticationToken token = oauthService.getTokenFromClientCredentials();
         assertNotNull(token);
     }
+    
+    /*@Test
+    @RunAsClient
+    public void authenticateUser(){
+        ThreadContext.bind(securityManager);
+        SecurityUtils.getSubject().login(oauthService.getTokenFromClientCredentials());
+       
+    }*/
 }
