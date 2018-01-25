@@ -50,34 +50,34 @@ public class OAuthRealmUnitTest {
     }
 
     @Test
-    public void authentication_info_returned_should_be_non_null() {
+    public void authenticationInfoReturnedShouldBeNonNull() {
         AuthenticationInfo info = underTest.getAuthenticationInfo(mockedToken());
         assertNotNull(info);
     }
 
     @Test(expected = AuthenticationException.class)
-    public void authentication_info_should_throw_AuthenticationException() {
+    public void authenticationInfoShouldThrowAuthenticationException() {
         underTest.getAuthenticationInfo(null);
     }
 
     @Test(expected = TokenValidationException.class)
-    public void authentication_info_should_throw_TokenValidationException() {
+    public void authenticationInfoShouldThrowTokenValidationException() {
         underTest.getAuthenticationInfo(mockedTokenWithIncorrectNonce());
     }
 
     @Test(expected = AuthenticationException.class)
-    public void authentication_info_should_throw_AuthenticationException_For_nullAccessToken() {
+    public void authenticationInfoShouldThrowAuthenticationExceptionForNullAccessToken() {
         underTest.getAuthenticationInfo(mockedTokenNullAccessToken());
     }
 
     @Test
-    public void outhConfig_should_be_not_null() {
+    public void outhConfigShouldBeNotNull() {
         mockOAuthConfig();
         assertNotNull(this.oauthConfig);
     }
 
     @Test
-    public void outhProvider_should_be_not_null() {
+    public void outhProviderShouldBeNotNull() {
         mockOAuthProvider();
         assertNotNull(this.oauthProvider);
     }

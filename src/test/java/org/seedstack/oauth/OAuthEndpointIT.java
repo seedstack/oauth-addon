@@ -5,44 +5,36 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.oauth;
 
-import static com.jayway.restassured.RestAssured.given;
-import java.net.URL;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.RunAsClient;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
+import static io.restassured.RestAssured.given;
+
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 import org.junit.Test;
-import org.seedstack.seed.it.AbstractSeedWebIT;
-import com.jayway.restassured.response.Response;
-import com.jayway.restassured.specification.RequestSpecification;
+import org.junit.runner.RunWith;
+import org.seedstack.seed.Configuration;
+import org.seedstack.seed.testing.LaunchWith;
+import org.seedstack.seed.testing.junit4.SeedITRunner;
+import org.seedstack.seed.undertow.internal.UndertowLauncher;
 
-
-public class OAuthEndpointIT extends AbstractSeedWebIT{
-
+@RunWith(SeedITRunner.class)
+@LaunchWith(UndertowLauncher.class)
+public class OAuthEndpointIT {
     private static final String J_SESSION_ID = "JSESSIONID";
     private static final String LOCATION = "Location";
     private String jSessionId;
-
-    @ArquillianResource
-    private URL baseURL;
-
-    @Deployment
-    public static WebArchive createDeployment() {
-        return ShrinkWrap.create(WebArchive.class);
-    }
-
+    @Configuration("web.runtime.baseUrl")
+    private String baseUrl;
 
     @Test
-    @RunAsClient
-    public void request_to_authorise_user_should_succeed() {
+    public void requestToAuthoriseUserShouldSucceed() {
         Response response1 = createRequest()
                 .expect()
                 .statusCode(302)
                 .when()
-                .get(baseURL.toString() + "api/profile");
+                .get(baseUrl + "api/profile");
 
         extractSessionId(response1);
 
@@ -52,7 +44,7 @@ public class OAuthEndpointIT extends AbstractSeedWebIT{
                 .when()
                 .get(response1.getHeader(LOCATION));
 
-                 createRequest()
+        createRequest()
                 .expect()
                 .statusCode(302)
                 .when()

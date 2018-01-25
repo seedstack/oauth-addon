@@ -17,19 +17,18 @@ import javax.ws.rs.core.Response;
 
 @Path("/provider/authorize")
 public class AuthorizationResource {
+    private static final String CODE = "4/n-RGoEYxlrWeK99Y1aAc6T59bqY65kXHtMxngInIOjM";
 
-    String code = "4/n-RGoEYxlrWeK99Y1aAc6T59bqY65kXHtMxngInIOjM";
-    
     @GET
     public Response authoriseUser(@QueryParam("redirect_uri") String redirect_uri,
-                                @QueryParam("state") String state, @QueryParam("nonce") String nonce) 
-                                        throws UnsupportedEncodingException{
+            @QueryParam("state") String state, @QueryParam("nonce") String nonce)
+            throws UnsupportedEncodingException {
         NonceHandler n = new NonceHandler();
         n.storeNonce(nonce);
-        
+
         return Response.status(302).header("Location",
-                URLDecoder.decode(redirect_uri,"UTF-8")+"?"+"code="+code+"&state="+state ).build();
-            
-    }    
-    
+                URLDecoder.decode(redirect_uri, "UTF-8") + "?" + "code=" + CODE + "&state=" + state).build();
+
+    }
+
 }

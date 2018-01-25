@@ -11,6 +11,6 @@ package org.seedstack.oauth.fixtures;
 import org.seedstack.shed.exception.ErrorCode;
 
 public enum TokenErrorCode implements ErrorCode {
-    
-    UNABLE_TO_FETCH_PRIVATE_KEY, FAILED_TO_LOAD_JWKS
+    UNABLE_TO_FETCH_PRIVATE_KEY,
+    FAILED_TO_LOAD_JWKS
 }

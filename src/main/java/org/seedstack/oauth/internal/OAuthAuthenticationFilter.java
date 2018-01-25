@@ -42,12 +42,12 @@ import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.OAuthProvider;
 import org.seedstack.seed.Configuration;
 import org.seedstack.seed.web.SecurityFilter;
-import org.seedstack.seed.web.security.internal.SessionRegenerationCapable;
+import org.seedstack.seed.web.security.SessionRegeneratingFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SecurityFilter("oauth")
-public class OAuthAuthenticationFilter extends AuthenticatingFilter implements SessionRegenerationCapable {
+public class OAuthAuthenticationFilter extends AuthenticatingFilter implements SessionRegeneratingFilter {
     static final String STATE_KEY = "org.seedstack.oauth.OAuthState";
     static final String NONCE_KEY = "org.seedstack.oauth.OIDCNonce";
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuthAuthenticationFilter.class);

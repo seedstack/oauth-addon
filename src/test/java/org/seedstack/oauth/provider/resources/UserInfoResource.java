@@ -6,7 +6,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-
 package org.seedstack.oauth.provider.resources;
 
 import javax.ws.rs.GET;
@@ -18,15 +17,12 @@ import javax.ws.rs.core.Response;
 @Path("/provider/userInfo")
 @Produces(MediaType.APPLICATION_JSON)
 public class UserInfoResource {
-    
     @GET
-    public Response fetchUserInfo(){
+    public Response fetchUserInfo() {
         return Response.ok(userInformation()).build();
     }
-    
-    
-    private UserInformation userInformation(){
-        
+
+    private UserInformation userInformation() {
         UserInformation userInfo = new UserInformation();
         userInfo.setSub("248289761001");
         userInfo.setGiven_name("Jyoti");
@@ -34,9 +30,7 @@ public class UserInfoResource {
         userInfo.setName("Jyoti Athalye");
         userInfo.setEmail("myTest@gmail.com");
         userInfo.setPicture("");
-        
         return userInfo;
     }
-
 }
 

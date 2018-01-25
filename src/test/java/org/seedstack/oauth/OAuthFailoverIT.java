@@ -5,91 +5,81 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.oauth;
 
-import static com.jayway.restassured.RestAssured.given;
-import java.net.URL;
+import static io.restassured.RestAssured.given;
+
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 import org.apache.commons.lang.StringUtils;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.RunAsClient;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
-import org.seedstack.seed.it.AbstractSeedWebIT;
-import com.jayway.restassured.response.Response;
-import com.jayway.restassured.specification.RequestSpecification;
+import org.junit.runner.RunWith;
+import org.seedstack.seed.Configuration;
+import org.seedstack.seed.testing.LaunchWith;
+import org.seedstack.seed.testing.junit4.SeedITRunner;
+import org.seedstack.seed.undertow.internal.UndertowLauncher;
 
-
-public class OAuthFailoverIT extends AbstractSeedWebIT{
-    
+@RunWith(SeedITRunner.class)
+@LaunchWith(UndertowLauncher.class)
+public class OAuthFailoverIT {
     private static final String J_SESSION_ID = "JSESSIONID";
     private static final String LOCATION = "Location";
+    private static final String INCORRECT_STATE_VAL = "KOfmAYYIIZQ_W8OBIWtz3Xs2cWKQqWYtM";
+    @Configuration("web.runtime.baseUrl")
+    private String baseUrl;
     private String jSessionId;
-    private String INCORRECT_STATE_VAL = "KOfmAYYIIZQ_W8OBIWtz3Xs2cWKQqWYtM";
-    
-    @ArquillianResource
-    private URL baseURL;
 
-    @Deployment
-    public static WebArchive createDeployment() {                            
-        return ShrinkWrap.create(WebArchive.class)
-                .addAsResource("audience-test-config.yaml", "META-INF/configuration/audience-test-config.yaml");
-    }
-    
+// TODO                .addAsResource("audience-test-config.yaml", "META-INF/configuration/audience-test-config.yaml");
 
     @Test
-    @RunAsClient
-    public void request_should_fail_due_to_mismatch_in_states() throws Exception {
+    public void requestShouldFailDueToMismatchInStates() throws Exception {
         Response response1 = createRequest()
                 .expect()
                 .statusCode(302)
                 .when()
-                .get(baseURL.toString() + "api/profile");
+                .get(baseUrl + "api/profile");
 
         extractSessionId(response1);
-        
+
         Response response2 = createRequest()
                 .expect()
                 .statusCode(302)
                 .when()
                 .get(modifyAuthCodeReqWithState(response1.getHeader(LOCATION)));
-      
-                 createRequest()
+
+        createRequest()
                 .expect()
-                .statusCode(500) 
+                .statusCode(500)
                 .when()
                 .get(response2.getHeader(LOCATION));
-                 
+
     }
-    
-    
+
     @Test
-    @RunAsClient
-    public void request_should_fail_due_to_incorrect_token_audience(){
+    public void requestShouldFailDueToIncorrectTokenAudience() {
         Response response1 = createRequest()
                 .expect()
                 .statusCode(302)
                 .when()
-                .get(baseURL.toString() + "api/profile");
+                .get(baseUrl + "api/profile");
 
         extractSessionId(response1);
-        
+
         Response response2 = createRequest()
                 .expect()
                 .statusCode(302)
                 .when()
                 .get(response1.getHeader(LOCATION));
-      
-                 createRequest()
+
+        createRequest()
                 .expect()
-                .statusCode(403) 
+                .statusCode(403)
                 .when()
                 .get(response2.getHeader(LOCATION));
 
     }
-    
-    
+
     private void extractSessionId(Response response1) {
         jSessionId = response1.getCookie(J_SESSION_ID);
     }
@@ -101,11 +91,10 @@ public class OAuthFailoverIT extends AbstractSeedWebIT{
         }
         return requestSpecification;
     }
-    
-    private String modifyAuthCodeReqWithState(String authCodeRequest){
+
+    private String modifyAuthCodeReqWithState(String authCodeRequest) {
         String state = StringUtils.substringBetween(authCodeRequest, "state=", "&");
         authCodeRequest = authCodeRequest.replaceAll(state, INCORRECT_STATE_VAL);
         return authCodeRequest;
     }
-   
 }

@@ -8,75 +8,67 @@
 /*
  * Creation : 13 Dec 2017
  */
+
 package org.seedstack.oauth;
 
-import static com.jayway.restassured.RestAssured.given;
+import static io.restassured.RestAssured.given;
 
-import java.net.URL;
-
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.RunAsClient;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 import org.junit.Test;
-import org.seedstack.seed.it.AbstractSeedWebIT;
+import org.junit.runner.RunWith;
+import org.seedstack.seed.Configuration;
+import org.seedstack.seed.testing.LaunchWith;
+import org.seedstack.seed.testing.junit4.SeedITRunner;
+import org.seedstack.seed.undertow.internal.UndertowLauncher;
 
-import com.jayway.restassured.response.Response;
-import com.jayway.restassured.specification.RequestSpecification;
-
-public class OAuthTokenExpirationIT extends AbstractSeedWebIT{
-    
+@RunWith(SeedITRunner.class)
+@LaunchWith(UndertowLauncher.class)
+public class OAuthTokenExpirationIT {
     private static final String J_SESSION_ID = "JSESSIONID";
     private static final String LOCATION = "Location";
     private String jSessionId;
-   
-    @ArquillianResource
-    private URL baseURL;
+    @Configuration("web.runtime.baseUrl")
+    private String baseUrl;
 
-    @Deployment
-    public static WebArchive createDeployment() {                            
-        return ShrinkWrap.create(WebArchive.class)
-                .addAsResource("token-expiry-test-config.yaml", "META-INF/configuration/token-expiry-test-config.yaml");
+// TODO                .addAsResource("token-expiry-test-config.yaml",
+// "META-INF/configuration/token-expiry-test-config.yaml");
+
+    @Test
+    public void requestShouldFailDueToTokenExpiration() throws Exception {
+
+        Response response1 = createRequest()
+                .expect()
+                .statusCode(302)
+                .when()
+                .get(baseUrl + "api/profile");
+
+        extractSessionId(response1);
+
+        Response response2 = createRequest()
+                .expect()
+                .statusCode(302)
+                .when()
+                .get(response1.getHeader(LOCATION));
+
+        createRequest()
+                .expect()
+                .statusCode(403)
+                .when()
+                .get(response2.getHeader(LOCATION));
+
     }
-    
 
-   @Test
-   @RunAsClient
-   public void request_should_fail_due_to_token_expiration() throws Exception {
-       
-       Response response1 = createRequest()
-               .expect()
-               .statusCode(302)
-               .when()
-               .get(baseURL.toString() + "api/profile");
+    private void extractSessionId(Response response1) {
+        jSessionId = response1.getCookie(J_SESSION_ID);
+    }
 
-       extractSessionId(response1);
-       
-       Response response2 = createRequest()
-               .expect()
-               .statusCode(302)
-               .when()
-               .get(response1.getHeader(LOCATION));
-     
-                createRequest()
-               .expect()
-               .statusCode(403) 
-               .when()
-               .get(response2.getHeader(LOCATION));
-                
-   }
-   
-   private void extractSessionId(Response response1) {
-       jSessionId = response1.getCookie(J_SESSION_ID);
-   }
+    private RequestSpecification createRequest() {
+        RequestSpecification requestSpecification = given().redirects().follow(false);
+        if (jSessionId != null) {
+            requestSpecification = requestSpecification.cookie(J_SESSION_ID, jSessionId);
+        }
+        return requestSpecification;
+    }
 
-   private RequestSpecification createRequest() {
-       RequestSpecification requestSpecification = given().redirects().follow(false);
-       if (jSessionId != null) {
-           requestSpecification = requestSpecification.cookie(J_SESSION_ID, jSessionId);
-       }
-       return requestSpecification;
-   }
-   
 }
