@@ -1,6 +1,6 @@
 <!--
 
-    Copyright © 2013-2017, The SeedStack authors <http://seedstack.org>
+    Copyright © 2013-2018, The SeedStack authors <http://seedstack.org>
 
     This Source Code Form is subject to the terms of the Mozilla Public
     License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -14,7 +14,7 @@
     <parent>
         <groupId>org.seedstack.poms</groupId>
         <artifactId>parent-internal</artifactId>
-        <version>3.1.1</version>
+        <version>3.2.0-SNAPSHOT</version>
     </parent>
 
     <groupId>org.seedstack.addons.oauth</groupId>
@@ -22,9 +22,8 @@
     <version>1.0.0-SNAPSHOT</version>
 
     <properties>
-        <seed.version>3.4.2-SNAPSHOT</seed.version>
+        <seed.version>3.5.0-SNAPSHOT</seed.version>
         <oauth2-oidc-sdk.version>5.38</oauth2-oidc-sdk.version>
-        <poms.version>3.1.1</poms.version>
         <compatibility.skip>true</compatibility.skip>
 
         <bintray.package>oauth-addon</bintray.package>
@@ -63,8 +62,7 @@
                             <licenseMerge>CDDL|GPLv2+CE</licenseMerge>
                             <licenseMerge>CDDL|Common Development and Distribution License (CDDL) v1.0</licenseMerge>
                             <licenseMerge>CDDL|CDDL + GPLv2 with classpath exception</licenseMerge>
-                            <licenseMerge>CDDL|GNU General Public License, Version 2 with the Classpath Exception
-                            </licenseMerge>
+                            <licenseMerge>CDDL|GNU General Public License, Version 2 with the Classpath Exception</licenseMerge>
                             <licenseMerge>CDDL|Common Development and Distribution License</licenseMerge>
                             <licenseMerge>JSON|The JSON License</licenseMerge>
                             <licenseMerge>LGPL 3.0|GNU Lesser Public License</licenseMerge>
@@ -76,7 +74,7 @@
                     </configuration>
                 </plugin>
             </plugins>
-            
+
         </pluginManagement>
     </build>
 
@@ -125,8 +123,20 @@
 
         <dependency>
             <groupId>org.seedstack.seed</groupId>
-            <artifactId>seed-testing</artifactId>
+            <artifactId>seed-testing-junit4</artifactId>
             <version>${seed.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-core</artifactId>
+            <version>${powermock.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -148,14 +158,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.seedstack.poms</groupId>
-            <artifactId>arquillian-composite</artifactId>
-            <version>${poms.version}</version>
-            <type>pom</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.jayway.restassured</groupId>
+            <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
             <version>${rest-assured.version}</version>
             <scope>test</scope>

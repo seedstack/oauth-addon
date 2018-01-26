@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013-2017, The SeedStack authors <http://seedstack.org>
+ * Copyright © 2013-2018, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -50,22 +50,21 @@ import org.seedstack.oauth.OAuthProvider;
 import org.seedstack.seed.Configuration;
 import org.seedstack.seed.SeedException;
 import org.seedstack.seed.web.SecurityFilter;
-import org.seedstack.seed.web.security.internal.SessionRegenerationCapable;
+import org.seedstack.seed.web.security.SessionRegeneratingFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SecurityFilter("oauthCallback")
-public class OAuthCallbackFilter extends AuthenticatingFilter implements SessionRegenerationCapable {
+public class OAuthCallbackFilter extends AuthenticatingFilter implements SessionRegeneratingFilter {
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuthCallbackFilter.class);
     private static final String DEFAULT_REDIRECT_URL = "/";
-    private String redirectUrl = DEFAULT_REDIRECT_URL;
     private static final String AUTHORIZATION = "Authorization";
+    private String redirectUrl = DEFAULT_REDIRECT_URL;
     @Inject
     private OAuthProvider oauthProvider;
     @Configuration
     private OAuthConfig oauthConfig;
 
-    
     @Override
     protected boolean executeLogin(ServletRequest request, ServletResponse response) throws Exception {
         AuthenticationToken token = createToken(request, response);
@@ -77,16 +76,15 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
         try {
             Subject subject = getSubject(request, response);
             subject.login(token);
-            
-            ((HttpServletResponse)response).addHeader(AUTHORIZATION, token.getCredentials().toString());
-            
+
+            ((HttpServletResponse) response).addHeader(AUTHORIZATION, token.getCredentials().toString());
+
             return onLoginSuccess(token, subject, request, response);
         } catch (AuthenticationException e) {
             return onLoginFailure(token, e, request, response);
         }
     }
-    
-    
+
     @Override
     protected AuthenticationToken createToken(ServletRequest request, ServletResponse response) throws Exception {
         Tokens tokens = requestTokens(new AuthorizationCodeGrant(parseAuthorizationCode(WebUtils.toHttp(request)),
