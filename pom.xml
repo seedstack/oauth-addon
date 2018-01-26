@@ -1,6 +1,6 @@
 <!--
 
-    Copyright © 2013-2017, The SeedStack authors <http://seedstack.org>
+    Copyright © 2013-2018, The SeedStack authors <http://seedstack.org>
 
     This Source Code Form is subject to the terms of the Mozilla Public
     License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -62,8 +62,7 @@
                             <licenseMerge>CDDL|GPLv2+CE</licenseMerge>
                             <licenseMerge>CDDL|Common Development and Distribution License (CDDL) v1.0</licenseMerge>
                             <licenseMerge>CDDL|CDDL + GPLv2 with classpath exception</licenseMerge>
-                            <licenseMerge>CDDL|GNU General Public License, Version 2 with the Classpath Exception
-                            </licenseMerge>
+                            <licenseMerge>CDDL|GNU General Public License, Version 2 with the Classpath Exception</licenseMerge>
                             <licenseMerge>CDDL|Common Development and Distribution License</licenseMerge>
                             <licenseMerge>JSON|The JSON License</licenseMerge>
                             <licenseMerge>LGPL 3.0|GNU Lesser Public License</licenseMerge>
@@ -132,6 +131,12 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-core</artifactId>
+            <version>${powermock.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

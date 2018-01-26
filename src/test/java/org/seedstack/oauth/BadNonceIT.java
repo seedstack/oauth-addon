@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013-2017, The SeedStack authors <http://seedstack.org>
+ * Copyright © 2013-2018, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -15,21 +15,23 @@ import io.restassured.specification.RequestSpecification;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.seedstack.seed.Configuration;
+import org.seedstack.seed.testing.ConfigurationProperty;
 import org.seedstack.seed.testing.LaunchWith;
 import org.seedstack.seed.testing.junit4.SeedITRunner;
 import org.seedstack.seed.undertow.internal.UndertowLauncher;
 
 @RunWith(SeedITRunner.class)
 @LaunchWith(UndertowLauncher.class)
-public class OAuthEndpointIT {
+@ConfigurationProperty(name = "testConfig.testInvalidNonce", value = "true")
+public class BadNonceIT {
     private static final String J_SESSION_ID = "JSESSIONID";
     private static final String LOCATION = "Location";
-    private String jSessionId;
     @Configuration("web.runtime.baseUrl")
     private String baseUrl;
+    private String jSessionId;
 
     @Test
-    public void requestToAuthoriseUserShouldSucceed() {
+    public void requestShouldFailDueToMismatchInNonce() throws Exception {
         Response response1 = createRequest()
                 .expect()
                 .statusCode(302)
@@ -46,9 +48,10 @@ public class OAuthEndpointIT {
 
         createRequest()
                 .expect()
-                .statusCode(302)
+                .statusCode(403)
                 .when()
                 .get(response2.getHeader(LOCATION));
+
     }
 
     private void extractSessionId(Response response1) {

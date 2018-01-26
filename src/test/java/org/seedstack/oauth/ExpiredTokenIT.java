@@ -1,10 +1,14 @@
 /*
- * Copyright © 2013-2017, The SeedStack authors <http://seedstack.org>
+ * Copyright © 2013-2018, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+/*
+ * Creation : 13 Dec 2017
+ */
+
 
 package org.seedstack.oauth;
 
@@ -12,52 +16,27 @@ import static io.restassured.RestAssured.given;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
-import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.seedstack.seed.Configuration;
+import org.seedstack.seed.testing.ConfigurationProperty;
 import org.seedstack.seed.testing.LaunchWith;
 import org.seedstack.seed.testing.junit4.SeedITRunner;
 import org.seedstack.seed.undertow.internal.UndertowLauncher;
 
 @RunWith(SeedITRunner.class)
 @LaunchWith(UndertowLauncher.class)
-public class OAuthFailoverIT {
+@ConfigurationProperty(name = "testConfig.testTokenExpiry", value = "true")
+public class ExpiredTokenIT {
     private static final String J_SESSION_ID = "JSESSIONID";
     private static final String LOCATION = "Location";
-    private static final String INCORRECT_STATE_VAL = "KOfmAYYIIZQ_W8OBIWtz3Xs2cWKQqWYtM";
+    private String jSessionId;
     @Configuration("web.runtime.baseUrl")
     private String baseUrl;
-    private String jSessionId;
-
-// TODO                .addAsResource("audience-test-config.yaml", "META-INF/configuration/audience-test-config.yaml");
 
     @Test
-    public void requestShouldFailDueToMismatchInStates() throws Exception {
-        Response response1 = createRequest()
-                .expect()
-                .statusCode(302)
-                .when()
-                .get(baseUrl + "api/profile");
+    public void requestShouldFailDueToTokenExpiration() throws Exception {
 
-        extractSessionId(response1);
-
-        Response response2 = createRequest()
-                .expect()
-                .statusCode(302)
-                .when()
-                .get(modifyAuthCodeReqWithState(response1.getHeader(LOCATION)));
-
-        createRequest()
-                .expect()
-                .statusCode(500)
-                .when()
-                .get(response2.getHeader(LOCATION));
-
-    }
-
-    @Test
-    public void requestShouldFailDueToIncorrectTokenAudience() {
         Response response1 = createRequest()
                 .expect()
                 .statusCode(302)
@@ -92,9 +71,4 @@ public class OAuthFailoverIT {
         return requestSpecification;
     }
 
-    private String modifyAuthCodeReqWithState(String authCodeRequest) {
-        String state = StringUtils.substringBetween(authCodeRequest, "state=", "&");
-        authCodeRequest = authCodeRequest.replaceAll(state, INCORRECT_STATE_VAL);
-        return authCodeRequest;
-    }
 }

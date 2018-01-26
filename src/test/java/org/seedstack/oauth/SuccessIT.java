@@ -1,12 +1,9 @@
 /*
- * Copyright © 2013-2017, The SeedStack authors <http://seedstack.org>
+ * Copyright © 2013-2018, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- */
-/*
- * Creation : 13 Dec 2017
  */
 
 package org.seedstack.oauth;
@@ -24,19 +21,15 @@ import org.seedstack.seed.undertow.internal.UndertowLauncher;
 
 @RunWith(SeedITRunner.class)
 @LaunchWith(UndertowLauncher.class)
-public class OAuthTokenExpirationIT {
+public class SuccessIT {
     private static final String J_SESSION_ID = "JSESSIONID";
     private static final String LOCATION = "Location";
     private String jSessionId;
     @Configuration("web.runtime.baseUrl")
     private String baseUrl;
 
-// TODO                .addAsResource("token-expiry-test-config.yaml",
-// "META-INF/configuration/token-expiry-test-config.yaml");
-
     @Test
-    public void requestShouldFailDueToTokenExpiration() throws Exception {
-
+    public void requestToAuthoriseUserShouldSucceed() {
         Response response1 = createRequest()
                 .expect()
                 .statusCode(302)
@@ -53,10 +46,9 @@ public class OAuthTokenExpirationIT {
 
         createRequest()
                 .expect()
-                .statusCode(403)
+                .statusCode(302)
                 .when()
                 .get(response2.getHeader(LOCATION));
-
     }
 
     private void extractSessionId(Response response1) {
@@ -70,5 +62,4 @@ public class OAuthTokenExpirationIT {
         }
         return requestSpecification;
     }
-
 }

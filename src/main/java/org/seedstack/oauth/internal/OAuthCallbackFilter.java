@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013-2017, The SeedStack authors <http://seedstack.org>
+ * Copyright © 2013-2018, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -58,8 +58,8 @@ import org.slf4j.LoggerFactory;
 public class OAuthCallbackFilter extends AuthenticatingFilter implements SessionRegeneratingFilter {
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuthCallbackFilter.class);
     private static final String DEFAULT_REDIRECT_URL = "/";
-    private String redirectUrl = DEFAULT_REDIRECT_URL;
     private static final String AUTHORIZATION = "Authorization";
+    private String redirectUrl = DEFAULT_REDIRECT_URL;
     @Inject
     private OAuthProvider oauthProvider;
     @Configuration

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013-2017, The SeedStack authors <http://seedstack.org>
+ * Copyright © 2013-2018, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -25,6 +25,10 @@ class DiscoveredOAuthProvider implements OAuthProvider {
     DiscoveredOAuthProvider(OAuthConfig oauthConfig, DiscoveryDocument oidcDiscoveryDocument) {
         this.oauthConfig = oauthConfig;
         this.oidcDiscoveryDocument = oidcDiscoveryDocument;
+    }
+
+    private static <T> T or(T first, T second) {
+        return first != null ? first : second;
     }
 
     @Override
@@ -114,9 +118,5 @@ class DiscoveredOAuthProvider implements OAuthProvider {
 
         }
         return signingAlgorithm;
-    }
-
-    private static <T> T or(T first, T second) {
-        return first != null ? first : second;
     }
 }

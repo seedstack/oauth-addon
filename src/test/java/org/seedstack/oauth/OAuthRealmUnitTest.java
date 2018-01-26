@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013-2017, The SeedStack authors <http://seedstack.org>
+ * Copyright © 2013-2018, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -25,7 +25,8 @@ import javax.inject.Provider;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.mockito.internal.util.reflection.Whitebox;
+import org.powermock.reflect.Whitebox;
+import org.seedstack.oauth.fixtures.MockedManualOAuthProvider;
 import org.seedstack.oauth.fixtures.TestAccessTokenValidator;
 import org.seedstack.oauth.internal.OAuthRealm;
 import org.seedstack.oauth.internal.OidcAuthenticationToken;
@@ -42,7 +43,7 @@ public class OAuthRealmUnitTest {
     private AccessToken accessToken = new BearerAccessToken(accessTokenValue);
 
     @Before
-    public void Before() {
+    public void before() throws Exception {
         this.underTest = new OAuthRealm();
         mockOAuthConfig();
         mockOAuthProvider();
@@ -77,7 +78,7 @@ public class OAuthRealmUnitTest {
     }
 
     @Test
-    public void outhProviderShouldBeNotNull() {
+    public void outhProviderShouldBeNotNull() throws Exception {
         mockOAuthProvider();
         assertNotNull(this.oauthProvider);
     }
@@ -117,7 +118,7 @@ public class OAuthRealmUnitTest {
     }
 
     //Mock OAuthProvider
-    private void mockOAuthProvider() {
+    private void mockOAuthProvider() throws Exception {
         this.oauthProvider = Mockito.mock(MockedManualOAuthProvider.class);
         Whitebox.setInternalState(underTest, "oauthProvider", this.oauthProvider);
         Mockito.when(this.oauthProvider.getIssuer()).thenReturn(dummyIssuer());
@@ -125,6 +126,7 @@ public class OAuthRealmUnitTest {
     }
 
     //Mock AccessTokenValidator
+    @SuppressWarnings("unchecked")
     private void mockAccessTokenValidator() {
         Provider<AccessTokenValidator> providerForValidator = (Provider<AccessTokenValidator>) Mockito
                 .mock(Provider.class);
@@ -150,22 +152,13 @@ public class OAuthRealmUnitTest {
     }
 
     private AuthenticationToken mockedTokenNullAccessToken() {
-        AccessToken accessTokenNull = null;
         Nonce nonce = new Nonce("123");
         JWT plainJWT = createPlainJWT();
-
-        return new OidcAuthenticationToken(accessTokenNull, plainJWT, nonce);
+        return new OidcAuthenticationToken(null, plainJWT, nonce);
     }
 
-    private Optional<URI> dummyIssuer() {
-        URI dummyIssuerURI = null;
-        try {
-            dummyIssuerURI = new URI("https://accounts.google.com");
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
-
-        return Optional.of(dummyIssuerURI);
+    private Optional<URI> dummyIssuer() throws URISyntaxException {
+        return Optional.of(new URI("https://accounts.google.com"));
     }
 
 }
