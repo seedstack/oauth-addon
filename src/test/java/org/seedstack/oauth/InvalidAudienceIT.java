@@ -17,12 +17,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.seedstack.seed.Configuration;
 import org.seedstack.seed.testing.ConfigurationProperty;
-import org.seedstack.seed.testing.LaunchWith;
 import org.seedstack.seed.testing.junit4.SeedITRunner;
-import org.seedstack.seed.undertow.internal.UndertowLauncher;
+import org.seedstack.seed.undertow.LaunchWithUndertow;
 
 @RunWith(SeedITRunner.class)
-@LaunchWith(UndertowLauncher.class)
+@LaunchWithUndertow
 @ConfigurationProperty(name = "testConfig.testInvalidAudience", value = "true")
 public class InvalidAudienceIT {
     private static final String J_SESSION_ID = "JSESSIONID";

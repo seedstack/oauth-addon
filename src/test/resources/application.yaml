@@ -47,18 +47,3 @@ security:
     scopes: email
     clientId: ${env.clientId}
     clientSecret: ${env.clientSecret}
-
-  oauth<psa>:
-    openIdConnect:
-      # Override issuer to workaround OpenAM #5326
-      # https://bugster.forgerock.org/jira/si/jira.issueviews:issue-html/OPENAM-5326/OPENAM-5326.html
-      issuer: https://diam-idp.test.inetpsa.com/am
-    scopes: mail
-    redirect: http://localhost:8080/callback
-    discoveryDocument: https://diam-idp.test.inetpsa.com/am/.well-known/openid-configuration?realm=/psa/seed
-    clientId: seedstack
-    clientSecret: seedstack
-
-proxy: 
-    httpProxy: "http://http.internetpsa.inetpsa.com:80"
-    noProxy: "*.inetpsa.com"

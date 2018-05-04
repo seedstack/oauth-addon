@@ -14,12 +14,11 @@ import javax.inject.Inject;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.seedstack.seed.testing.LaunchWith;
 import org.seedstack.seed.testing.junit4.SeedITRunner;
-import org.seedstack.seed.undertow.internal.UndertowLauncher;
+import org.seedstack.seed.undertow.LaunchWithUndertow;
 
 @RunWith(SeedITRunner.class)
-@LaunchWith(UndertowLauncher.class)
+@LaunchWithUndertow
 public class ClientCredentialsFlowIT {
     @Inject
     private OAuthService oauthService;
