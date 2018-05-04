@@ -34,29 +34,28 @@ public class BadNonceIT {
         Response response1 = createRequest()
                 .log().uri()
                 .expect()
+                .log().status()
                 .statusCode(302)
                 .when()
                 .get(baseUrl + "api/profile");
-        response1.then().log().status();
 
         extractSessionId(response1);
 
         Response response2 = createRequest()
                 .log().uri()
                 .expect()
+                .log().status()
                 .statusCode(302)
                 .when()
                 .get(response1.getHeader(LOCATION));
-        response2.then().log().status();
 
         createRequest()
                 .log().uri()
                 .expect()
+                .log().status()
                 .statusCode(403)
                 .when()
-                .get(response2.getHeader(LOCATION))
-                .then()
-                .log().status();
+                .get(response2.getHeader(LOCATION));
     }
 
     private void extractSessionId(Response response1) {
