@@ -40,10 +40,3 @@ security:
       jwks: ${web.runtime.baseUrl}JWKset.json
       userInfo: ${web.runtime.baseUrl}api/provider/userInfo
       unsecuredTokenAllowed: false
-
-  oauth<google>:
-    redirect: http://localhost:8080/callback
-    discoveryDocument: https://accounts.google.com/.well-known/openid-configuration
-    scopes: email
-    clientId: ${env.clientId}
-    clientSecret: ${env.clientSecret}

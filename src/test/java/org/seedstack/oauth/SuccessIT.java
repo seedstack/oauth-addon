@@ -30,24 +30,31 @@ public class SuccessIT {
     @Test
     public void requestToAuthoriseUserShouldSucceed() {
         Response response1 = createRequest()
+                .log().uri()
                 .expect()
                 .statusCode(302)
                 .when()
                 .get(baseUrl + "api/profile");
+        response1.then().log().status();
 
         extractSessionId(response1);
 
         Response response2 = createRequest()
+                .log().uri()
                 .expect()
                 .statusCode(302)
                 .when()
                 .get(response1.getHeader(LOCATION));
+        response2.then().log().status();
 
         createRequest()
+                .log().uri()
                 .expect()
                 .statusCode(302)
                 .when()
-                .get(response2.getHeader(LOCATION));
+                .get(response2.getHeader(LOCATION))
+                .then()
+                .log().status();
     }
 
     private void extractSessionId(Response response1) {
