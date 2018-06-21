@@ -40,3 +40,5 @@ security:
       jwks: ${web.runtime.baseUrl}JWKset.json
       userInfo: ${web.runtime.baseUrl}api/provider/userInfo
       unsecuredTokenAllowed: false
+
+security<noProvider>:

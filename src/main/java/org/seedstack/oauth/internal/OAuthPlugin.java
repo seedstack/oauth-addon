@@ -59,16 +59,23 @@ public class OAuthPlugin extends AbstractSeedPlugin {
             } catch (IOException e) {
                 throw SeedException.wrap(e, OAuthErrorCode.UNABLE_TO_FETCH_OPENID_CONNECT_DISCOVERY_DOCUMENT);
             }
-        } else if (provider != null) {
+        } else if (provider != null && provider.getAuthorization() != null && provider.getToken() != null) {
             oauthProvider = new ManualOAuthProvider(oauthConfig);
-        } else {
-            throw SeedException.createNew(OAuthErrorCode.MISSING_DISCOVERY_DOCUMENT_OR_MANUAL_CONFIGURATION);
         }
-        LOGGER.info("Configured OAuth provider " + oauthProvider.getIssuer().map(URI::toString).orElse("unknown"));
+
+        if (oauthProvider != null) {
+            LOGGER.info("Configured OAuth provider " + oauthProvider.getIssuer().map(URI::toString).orElse("unknown"));
+        } else {
+            LOGGER.info("No OAuth provider configured");
+        }
     }
 
     @Override
     public Object nativeUnitModule() {
-        return new OAuthModule(oauthProvider, oauthConfig.getAccessTokenValidator());
+        if (oauthProvider != null) {
+            return new OAuthModule(oauthProvider, oauthConfig.getAccessTokenValidator());
+        } else {
+            return null;
+        }
     }
 }

@@ -82,6 +82,7 @@ public class OAuthRealm implements Realm {
     @Override
     public Set<String> getRealmRoles(PrincipalProvider<?> identityPrincipal,
             Collection<PrincipalProvider<?>> otherPrincipals) {
+        System.out.println(otherPrincipals);
         return new HashSet<>();
     }
 
