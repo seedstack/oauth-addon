@@ -23,6 +23,7 @@ public class OAuthPlugin extends AbstractSeedPlugin {
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuthPlugin.class);
     private OAuthConfig oauthConfig;
     private OidcDiscoveryDocument discoveryDocument;
+    private boolean configured;
 
     @Override
     public String name() {
@@ -32,20 +33,25 @@ public class OAuthPlugin extends AbstractSeedPlugin {
     @Override
     protected InitState initialize(InitContext initContext) {
         oauthConfig = getConfiguration(OAuthConfig.class);
-        discoveryDocument = resolveOAuthProvider(oauthConfig);
+        discoveryDocument = resolveDiscoveryDocument();
         if (discoveryDocument != null) {
             LOGGER.info("Discovered OpenIdConnect provider " + discoveryDocument.getIssuer());
-        } else if (oauthConfig.openIdConnect().getIssuer() != null) {
-            LOGGER.info("Configured OpenIdConnect provider " + oauthConfig.openIdConnect().getIssuer());
+            configured = true;
+        } else if (oauthConfig.provider().getAuthorization() != null && oauthConfig.provider().getToken() != null) {
+            if (oauthConfig.openIdConnect().getIssuer() != null) {
+                LOGGER.info("Configured OpenIdConnect provider " + oauthConfig.openIdConnect().getIssuer());
+            } else {
+                LOGGER.info("Configured OAuth provider");
+            }
+            configured = true;
         } else {
-            LOGGER.info("Configured OAuth provider");
+            LOGGER.info("No OAuth provider configured");
         }
         return InitState.INITIALIZED;
     }
 
-    private OidcDiscoveryDocument resolveOAuthProvider(OAuthConfig oauthConfig) {
+    private OidcDiscoveryDocument resolveDiscoveryDocument() {
         URI discoveryDocument = oauthConfig.getDiscoveryDocument();
-        OAuthConfig.ProviderConfig provider = oauthConfig.provider();
         if (discoveryDocument != null) {
             ObjectMapper objectMapper = new ObjectMapper();
             try {
@@ -53,13 +59,17 @@ public class OAuthPlugin extends AbstractSeedPlugin {
             } catch (IOException e) {
                 throw SeedException.wrap(e, OAuthErrorCode.UNABLE_TO_FETCH_OPENID_CONNECT_DISCOVERY_DOCUMENT);
             }
-        } else if (provider != null && provider.getAuthorization() != null && provider.getToken() != null) {
+        } else {
             return null;
         }
     }
 
     @Override
     public Object nativeUnitModule() {
-        return new OAuthModule(discoveryDocument, oauthConfig.getAccessTokenValidator());
+        if (configured) {
+            return new OAuthModule(discoveryDocument, oauthConfig.getAccessTokenValidator());
+        } else {
+            return null;
+        }
     }
 }
