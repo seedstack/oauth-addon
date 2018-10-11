@@ -8,6 +8,8 @@
 
 package org.seedstack.oauth.fixtures;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -38,6 +40,13 @@ public class ProfileResource {
         Optional.ofNullable(securitySupport.getSimplePrincipalByName("picture"))
                 .map(SimplePrincipalProvider::getPrincipal)
                 .ifPresent(profileRepresentation::setPictureUrl);
+
+        Map<String, String> principals = new HashMap<>();
+        for (SimplePrincipalProvider simplePrincipalProvider : securitySupport.getSimplePrincipals()) {
+            principals.put(simplePrincipalProvider.getName(), simplePrincipalProvider.getValue());
+        }
+        profileRepresentation.setPrincipals(principals);
+
         return profileRepresentation;
     }
 }

@@ -8,11 +8,14 @@
 
 package org.seedstack.oauth.fixtures;
 
+import java.util.Map;
+
 public class ProfileRepresentation {
     private String firstName;
     private String lastName;
     private String fullName;
     private String pictureUrl;
+    private Map<String, String> principals;
 
     public String getFirstName() {
         return firstName;
@@ -44,5 +47,13 @@ public class ProfileRepresentation {
 
     public void setPictureUrl(String pictureUrl) {
         this.pictureUrl = pictureUrl;
+    }
+
+    public Map<String, String> getPrincipals() {
+        return principals;
+    }
+
+    public void setPrincipals(Map<String, String> principals) {
+        this.principals = principals;
     }
 }

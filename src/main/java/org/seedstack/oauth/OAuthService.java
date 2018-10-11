@@ -8,8 +8,18 @@
 
 package org.seedstack.oauth;
 
-import org.apache.shiro.authc.AuthenticationToken;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 public interface OAuthService {
-    AuthenticationToken getTokenFromClientCredentials();
+    default OAuthAuthenticationToken authenticateWithClientCredentials() {
+        return authenticateWithClientCredentials(new ArrayList<>());
+    }
+
+    OAuthAuthenticationToken authenticateWithClientCredentials(List<String> scopes);
+
+    OAuthProvider getOAuthProvider();
+
+    Optional<String> validate(OAuthAuthenticationToken authenticationToken);
 }

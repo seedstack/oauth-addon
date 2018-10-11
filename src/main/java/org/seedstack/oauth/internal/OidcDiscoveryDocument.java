@@ -14,7 +14,7 @@ import java.net.URI;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-class DiscoveryDocument {
+class OidcDiscoveryDocument {
     private URI issuer;
     @JsonProperty("authorization_endpoint")
     private URI authorizationEndpoint;

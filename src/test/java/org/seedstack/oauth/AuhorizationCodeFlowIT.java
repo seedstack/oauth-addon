@@ -20,7 +20,7 @@ import org.seedstack.seed.undertow.LaunchWithUndertow;
 
 @RunWith(SeedITRunner.class)
 @LaunchWithUndertow
-public class SuccessIT {
+public class AuhorizationCodeFlowIT {
     private static final String J_SESSION_ID = "JSESSIONID";
     private static final String LOCATION = "Location";
     private String jSessionId;

@@ -13,18 +13,14 @@ security:
   realms: OAuthRealm
   web:
     urls:
-      -
-        pattern: /api/provider/**
-        filters: anon
-      -
-        pattern: /callback
-        filters: oauthCallback
-      -
-        pattern: /profile.html
-        filters: oauth
-      -
-        pattern: /api/**
-        filters: oauth
+    - pattern: /api/provider/**
+      filters: anon
+    - pattern: /callback
+      filters: oauthCallback
+    - pattern: /profile.html
+      filters: oauth
+    - pattern: /api/**
+      filters: oauth
   oauth:
     redirect: ${web.runtime.baseUrl}callback
     clientId: testClientId

@@ -8,15 +8,35 @@
 
 package org.seedstack.oauth.internal;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.Strings;
+import com.nimbusds.oauth2.sdk.AccessTokenResponse;
+import com.nimbusds.oauth2.sdk.AuthorizationGrant;
 import com.nimbusds.oauth2.sdk.ErrorObject;
 import com.nimbusds.oauth2.sdk.ErrorResponse;
+import com.nimbusds.oauth2.sdk.ParseException;
+import com.nimbusds.oauth2.sdk.Scope;
+import com.nimbusds.oauth2.sdk.TokenRequest;
+import com.nimbusds.oauth2.sdk.TokenResponse;
+import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
+import com.nimbusds.oauth2.sdk.auth.Secret;
+import com.nimbusds.oauth2.sdk.id.ClientID;
+import com.nimbusds.oauth2.sdk.token.Tokens;
+import com.nimbusds.openid.connect.sdk.Nonce;
+import com.nimbusds.openid.connect.sdk.OIDCScopeValue;
+import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
+import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import org.seedstack.oauth.OAuthConfig;
+import org.seedstack.oauth.OAuthProvider;
 import org.seedstack.seed.SeedException;
 import org.seedstack.shed.exception.BaseException;
 
@@ -63,5 +83,61 @@ final class OAuthUtils {
             }
         }
         return queryPairs;
+    }
+
+    static OAuthAuthenticationTokenImpl requestTokens(OAuthProvider oauthProvider, OAuthConfig oauthConfig,
+            AuthorizationGrant authorizationGrant, Nonce nonce, List<String> scopes) {
+        URI endpointURI = oauthProvider.getTokenEndpoint();
+        Map<String, String> parameters = OAuthUtils.extractQueryParameters(endpointURI);
+        endpointURI = OAuthUtils.stripQueryString(endpointURI);
+
+        TokenRequest tokenRequest = new TokenRequest(
+                checkNotNull(endpointURI, "Missing token endpoint"),
+                new ClientSecretBasic(
+                        new ClientID(checkNotNull(oauthConfig.getClientId(), "Missing client identifier")),
+                        new Secret(checkNotNull(oauthConfig.getClientSecret(), "Missing client secret"))),
+                authorizationGrant,
+                createScope(scopes, oauthProvider),
+                parameters);
+
+        TokenResponse tokenResponse;
+        try {
+            if (oauthProvider.isOpenIdCapable()) {
+                tokenResponse = OIDCTokenResponse.parse(tokenRequest.toHTTPRequest().send());
+            } else {
+                tokenResponse = TokenResponse.parse(tokenRequest.toHTTPRequest().send());
+            }
+        } catch (IOException | ParseException e) {
+            throw SeedException.wrap(e, OAuthErrorCode.FAILED_TO_REQUEST_TOKENS);
+        }
+
+        if (tokenResponse.indicatesSuccess()) {
+            if (tokenResponse instanceof OIDCTokenResponse) {
+                OIDCTokens oidcTokens = ((OIDCTokenResponse) tokenResponse).getOIDCTokens();
+                return new OidcAuthenticationTokenImpl(
+                        oidcTokens.getAccessToken(),
+                        oidcTokens.getRefreshToken(),
+                        oidcTokens.getIDToken(),
+                        nonce);
+            } else {
+                Tokens tokens = ((AccessTokenResponse) tokenResponse).getTokens();
+                return new OAuthAuthenticationTokenImpl(tokens.getAccessToken(), tokens.getRefreshToken());
+            }
+        } else {
+            throw buildGenericError((ErrorResponse) tokenResponse);
+        }
+    }
+
+    static Scope createScope(List<String> scopes, OAuthProvider oAuthProvider) {
+        Scope scope;
+        if (scopes == null) {
+            scope = new Scope();
+        } else {
+            scope = new Scope(scopes.toArray(new String[0]));
+        }
+        if (oAuthProvider.isOpenIdCapable()) {
+            scope.add(OIDCScopeValue.OPENID);
+        }
+        return scope;
     }
 }

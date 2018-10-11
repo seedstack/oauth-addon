@@ -8,10 +8,7 @@
 
 package org.seedstack.oauth;
 
-import static org.junit.Assert.assertNotNull;
-
 import javax.inject.Inject;
-import org.apache.shiro.authc.AuthenticationToken;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.seedstack.seed.testing.junit4.SeedITRunner;
@@ -25,7 +22,7 @@ public class ClientCredentialsFlowIT {
 
     @Test
     public void getAccessTokenFromCredentials() {
-        AuthenticationToken token = oauthService.getTokenFromClientCredentials();
-        assertNotNull(token);
+        OAuthAuthenticationToken token = oauthService.authenticateWithClientCredentials();
+        oauthService.validate(token);
     }
 }

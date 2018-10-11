@@ -9,7 +9,6 @@
  * Creation : 20 Nov 2017
  */
 
-
 package org.seedstack.oauth;
 
 import com.nimbusds.oauth2.sdk.http.HTTPResponse;

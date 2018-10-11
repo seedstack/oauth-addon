@@ -9,26 +9,18 @@
 package org.seedstack.oauth.internal;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.shiro.web.util.WebUtils.toHttp;
 import static org.seedstack.oauth.internal.OAuthUtils.buildGenericError;
+import static org.seedstack.oauth.internal.OAuthUtils.requestTokens;
 
-import com.nimbusds.oauth2.sdk.AccessTokenResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
-import com.nimbusds.oauth2.sdk.AuthorizationGrant;
 import com.nimbusds.oauth2.sdk.AuthorizationResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationSuccessResponse;
 import com.nimbusds.oauth2.sdk.ErrorResponse;
 import com.nimbusds.oauth2.sdk.ParseException;
-import com.nimbusds.oauth2.sdk.TokenRequest;
-import com.nimbusds.oauth2.sdk.TokenResponse;
-import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
-import com.nimbusds.oauth2.sdk.auth.Secret;
-import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.State;
-import com.nimbusds.oauth2.sdk.token.Tokens;
 import com.nimbusds.openid.connect.sdk.Nonce;
-import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
-import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -44,9 +36,8 @@ import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.web.filter.authc.AuthenticatingFilter;
-import org.apache.shiro.web.util.WebUtils;
 import org.seedstack.oauth.OAuthConfig;
-import org.seedstack.oauth.OAuthProvider;
+import org.seedstack.oauth.OAuthService;
 import org.seedstack.seed.Configuration;
 import org.seedstack.seed.SeedException;
 import org.seedstack.seed.web.SecurityFilter;
@@ -61,7 +52,7 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
     private static final String AUTHORIZATION = "Authorization";
     private String redirectUrl = DEFAULT_REDIRECT_URL;
     @Inject
-    private OAuthProvider oauthProvider;
+    private OAuthService oAuthService;
     @Configuration
     private OAuthConfig oauthConfig;
 
@@ -86,14 +77,15 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
     }
 
     @Override
-    protected AuthenticationToken createToken(ServletRequest request, ServletResponse response) throws Exception {
-        Tokens tokens = requestTokens(new AuthorizationCodeGrant(parseAuthorizationCode(WebUtils.toHttp(request)),
-                checkNotNull(oauthConfig.getRedirect(), "Missing redirect URI")));
-        if (tokens instanceof OIDCTokens) {
-            return new OidcAuthenticationToken(tokens.getAccessToken(), ((OIDCTokens) tokens).getIDToken(), getNonce());
-        } else {
-            return new OAuthAuthenticationToken(tokens.getAccessToken());
-        }
+    protected AuthenticationToken createToken(ServletRequest request, ServletResponse response) {
+        return requestTokens(
+                oAuthService.getOAuthProvider(),
+                oauthConfig,
+                new AuthorizationCodeGrant(
+                        parseAuthorizationCode(toHttp(request)),
+                        checkNotNull(oauthConfig.getRedirect(), "Missing redirect URI")),
+                getNonce(),
+                null);
     }
 
     @Override
@@ -166,42 +158,6 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
             return ((AuthorizationSuccessResponse) authorizationResponse).getAuthorizationCode();
         } else {
             throw buildGenericError((ErrorResponse) authorizationResponse);
-        }
-    }
-
-    private Tokens requestTokens(AuthorizationGrant authorizationGrant) {
-        URI endpointURI = oauthProvider.getTokenEndpoint();
-        Map<String, String> parameters = OAuthUtils.extractQueryParameters(endpointURI);
-        endpointURI = OAuthUtils.stripQueryString(endpointURI);
-
-        TokenRequest tokenRequest = new TokenRequest(
-                checkNotNull(endpointURI, "Missing token endpoint"),
-                new ClientSecretBasic(
-                        new ClientID(checkNotNull(oauthConfig.getClientId(), "Missing client identifier")),
-                        new Secret(checkNotNull(oauthConfig.getClientSecret(), "Missing client secret"))),
-                authorizationGrant,
-                null,
-                parameters);
-
-        TokenResponse tokenResponse;
-        try {
-            if (oauthProvider.isOpenIdCapable()) {
-                tokenResponse = OIDCTokenResponse.parse(tokenRequest.toHTTPRequest().send());
-            } else {
-                tokenResponse = TokenResponse.parse(tokenRequest.toHTTPRequest().send());
-            }
-        } catch (IOException | ParseException e) {
-            throw SeedException.wrap(e, OAuthErrorCode.FAILED_TO_REQUEST_TOKENS);
-        }
-
-        if (tokenResponse.indicatesSuccess()) {
-            if (tokenResponse instanceof OIDCTokenResponse) {
-                return ((OIDCTokenResponse) tokenResponse).getOIDCTokens();
-            } else {
-                return ((AccessTokenResponse) tokenResponse).getTokens();
-            }
-        } else {
-            throw buildGenericError((ErrorResponse) tokenResponse);
         }
     }
 

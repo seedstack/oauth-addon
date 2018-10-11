@@ -8,29 +8,35 @@
 
 package org.seedstack.oauth.internal;
 
-import com.google.inject.AbstractModule;
+import com.google.inject.PrivateModule;
 import com.google.inject.util.Providers;
 import org.seedstack.oauth.AccessTokenValidator;
 import org.seedstack.oauth.OAuthProvider;
 import org.seedstack.oauth.OAuthService;
 
-class OAuthModule extends AbstractModule {
-    private final OAuthProvider oauthProvider;
+class OAuthModule extends PrivateModule {
+    private final OidcDiscoveryDocument discoveryDocument;
     private final Class<? extends AccessTokenValidator> accessTokenValidatorClass;
 
-    OAuthModule(OAuthProvider oauthProvider, Class<? extends AccessTokenValidator> accessTokenValidatorClass) {
-        this.oauthProvider = oauthProvider;
+    OAuthModule(OidcDiscoveryDocument discoveryDocument,
+            Class<? extends AccessTokenValidator> accessTokenValidatorClass) {
+        this.discoveryDocument = discoveryDocument;
         this.accessTokenValidatorClass = accessTokenValidatorClass;
     }
 
     @Override
     protected void configure() {
-        bind(OAuthProvider.class).toInstance(oauthProvider);
-        bind(OAuthService.class).to(OAuthServiceImpl.class);
+        if (discoveryDocument != null) {
+            bind(OAuthProvider.class).toProvider(new DiscoveredOAuthProvider(discoveryDocument));
+        } else {
+            bind(OAuthProvider.class).toProvider(new ManualOAuthProvider());
+        }
         if (accessTokenValidatorClass != null) {
             bind(AccessTokenValidator.class).to(accessTokenValidatorClass);
         } else {
             bind(AccessTokenValidator.class).toProvider(Providers.of(null));
         }
+        bind(OAuthService.class).to(OAuthServiceImpl.class);
+        expose(OAuthService.class);
     }
 }

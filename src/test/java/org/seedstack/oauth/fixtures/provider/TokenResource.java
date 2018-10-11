@@ -32,10 +32,7 @@ public class TokenResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     public Response createToken() {
-        NonceHandler n = new NonceHandler();
-        String nonce = n.getNonce();
-        n.deleteFile();
-        return Response.ok(tokenData(nonce)).build();
+        return Response.ok(tokenData(AuthorizationResource.nonce)).build();
     }
 
     private TokenData tokenData(String nonce) {

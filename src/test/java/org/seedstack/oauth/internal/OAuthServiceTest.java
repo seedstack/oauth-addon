@@ -6,8 +6,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package org.seedstack.oauth;
+package org.seedstack.oauth.internal;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNotNull;
 
 import com.nimbusds.jose.PlainHeader;
@@ -26,16 +27,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.powermock.reflect.Whitebox;
+import org.seedstack.oauth.AccessTokenValidator;
+import org.seedstack.oauth.OAuthAuthenticationToken;
+import org.seedstack.oauth.OAuthConfig;
+import org.seedstack.oauth.OAuthProvider;
+import org.seedstack.oauth.OAuthService;
+import org.seedstack.oauth.TokenValidationException;
 import org.seedstack.oauth.fixtures.MockedManualOAuthProvider;
 import org.seedstack.oauth.fixtures.TestAccessTokenValidator;
-import org.seedstack.oauth.internal.OAuthRealm;
-import org.seedstack.oauth.internal.OidcAuthenticationToken;
-import org.seedstack.seed.security.AuthenticationException;
-import org.seedstack.seed.security.AuthenticationInfo;
-import org.seedstack.seed.security.AuthenticationToken;
 
-public class OAuthRealmUnitTest {
-    private OAuthRealm underTest;
+public class OAuthServiceTest {
+    private OAuthService underTest;
     private OAuthConfig oauthConfig;
     private OAuthProvider oauthProvider;
     private String accessTokenValue = "ya29.Gl0OBRawZls_r7atLBziIl051NW1xWZTp96JbPyuz8g09Ty0QvavJaQz"
@@ -44,7 +46,7 @@ public class OAuthRealmUnitTest {
 
     @Before
     public void before() throws Exception {
-        this.underTest = new OAuthRealm();
+        this.underTest = new OAuthServiceImpl();
         mockOAuthConfig();
         mockOAuthProvider();
         mockAccessTokenValidator();
@@ -52,23 +54,22 @@ public class OAuthRealmUnitTest {
 
     @Test
     public void authenticationInfoReturnedShouldBeNonNull() {
-        AuthenticationInfo info = underTest.getAuthenticationInfo(mockedToken());
-        assertNotNull(info);
+        assertThat(underTest.validate(mockedToken())).get().isEqualTo("118090614001964330293");
     }
 
-    @Test(expected = AuthenticationException.class)
-    public void authenticationInfoShouldThrowAuthenticationException() {
-        underTest.getAuthenticationInfo(null);
+    @Test(expected = NullPointerException.class)
+    public void authenticationInfoShouldFailWithNullToken() {
+        underTest.validate(null);
     }
 
     @Test(expected = TokenValidationException.class)
-    public void authenticationInfoShouldThrowTokenValidationException() {
-        underTest.getAuthenticationInfo(mockedTokenWithIncorrectNonce());
+    public void authenticationInfoShouldFailWithIncorrectNonce() {
+        underTest.validate(mockedTokenWithIncorrectNonce());
     }
 
-    @Test(expected = AuthenticationException.class)
-    public void authenticationInfoShouldThrowAuthenticationExceptionForNullAccessToken() {
-        underTest.getAuthenticationInfo(mockedTokenNullAccessToken());
+    @Test(expected = NullPointerException.class)
+    public void authenticationInfoShouldFailWithNullAccessToken() {
+        underTest.validate(mockedTokenNullAccessToken());
     }
 
     @Test
@@ -137,24 +138,24 @@ public class OAuthRealmUnitTest {
     }
 
     //Mock access token
-    private AuthenticationToken mockedToken() {
+    private OAuthAuthenticationToken mockedToken() {
         Nonce nonce = new Nonce("123");
         JWT plainJWT = createPlainJWT();
 
-        return new OidcAuthenticationToken(accessToken, plainJWT, nonce);
+        return new OidcAuthenticationTokenImpl(accessToken, null, plainJWT, nonce);
     }
 
-    private AuthenticationToken mockedTokenWithIncorrectNonce() {
+    private OAuthAuthenticationToken mockedTokenWithIncorrectNonce() {
         Nonce nonce = new Nonce("789");
         JWT plainJWT = createPlainJWT();
 
-        return new OidcAuthenticationToken(accessToken, plainJWT, nonce);
+        return new OidcAuthenticationTokenImpl(accessToken, null, plainJWT, nonce);
     }
 
-    private AuthenticationToken mockedTokenNullAccessToken() {
+    private OAuthAuthenticationToken mockedTokenNullAccessToken() {
         Nonce nonce = new Nonce("123");
         JWT plainJWT = createPlainJWT();
-        return new OidcAuthenticationToken(null, plainJWT, nonce);
+        return new OidcAuthenticationTokenImpl(null, null, plainJWT, nonce);
     }
 
     private Optional<URI> dummyIssuer() throws URISyntaxException {

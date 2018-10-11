@@ -12,10 +12,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
+import com.nimbusds.oauth2.sdk.token.RefreshToken;
 import com.nimbusds.openid.connect.sdk.Nonce;
 import java.text.ParseException;
 
-public class OidcAuthenticationToken extends OAuthAuthenticationToken {
+public class OidcAuthenticationTokenImpl extends OAuthAuthenticationTokenImpl implements org.seedstack.oauth.OidcAuthenticationToken {
     private final JWT idToken;
     private final Nonce nonce;
 
@@ -26,9 +27,9 @@ public class OidcAuthenticationToken extends OAuthAuthenticationToken {
      * @param idToken     the id token.
      * @param nonce       the nonce.
      */
-    public OidcAuthenticationToken(AccessToken accessToken, JWT idToken, Nonce nonce) {
-        super(accessToken);
-        this.idToken = checkNotNull(idToken, "ID token should not be null");
+    OidcAuthenticationTokenImpl(AccessToken accessToken, RefreshToken refreshToken, JWT idToken, Nonce nonce) {
+        super(accessToken, refreshToken);
+        this.idToken = checkNotNull(idToken, "id token cannot be null");
         this.nonce = nonce;
     }
 
@@ -42,7 +43,7 @@ public class OidcAuthenticationToken extends OAuthAuthenticationToken {
      *
      * @return the nonce.
      */
-    public Nonce getNonce() {
+    Nonce getNonce() {
         return nonce;
     }
 
