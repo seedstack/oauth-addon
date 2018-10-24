@@ -10,6 +10,7 @@ package org.seedstack.oauth.internal;
 
 import com.nimbusds.oauth2.sdk.ErrorResponse;
 import com.nimbusds.oauth2.sdk.ParseException;
+import com.nimbusds.oauth2.sdk.Scope;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.openid.connect.sdk.UserInfoRequest;
@@ -17,6 +18,7 @@ import com.nimbusds.openid.connect.sdk.UserInfoResponse;
 import com.nimbusds.openid.connect.sdk.UserInfoSuccessResponse;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
@@ -53,8 +55,13 @@ public class OAuthRealm implements Realm {
     @Override
     public Set<String> getRealmRoles(PrincipalProvider<?> identityPrincipal,
             Collection<PrincipalProvider<?>> otherPrincipals) {
-        System.out.println(otherPrincipals);
-        return new HashSet<>();
+        for (PrincipalProvider<?> principalProvider : otherPrincipals) {
+            Serializable principal = principalProvider.getPrincipal();
+            if (principal instanceof Scope) {
+                return new HashSet<>(((Scope) principal).toStringList());
+            }
+        }
+        throw new IllegalStateException("No scope object found in the principals");
     }
 
     @Override
@@ -69,9 +76,14 @@ public class OAuthRealm implements Realm {
                             .map(subjectId -> new AuthenticationInfo(subjectId, accessToken))
                             .orElse(new AuthenticationInfo("", accessToken));
 
-            // Fill subject principals with user info endpoint if available
+            Collection<PrincipalProvider<?>> otherPrincipals = authenticationInfo.getOtherPrincipals();
+
+            // Scope as principal
+            otherPrincipals.add(new ScopePrincipalProvider(accessToken.getScope()));
+
+            // User info-based principals
             fetchUserInfo(accessToken).ifPresent(userInfo -> {
-                Collection<PrincipalProvider<?>> otherPrincipals = authenticationInfo.getOtherPrincipals();
+                // Standard SeedStack principals if present (SDK and realm neutral)
                 Optional.ofNullable(userInfo.getGivenName())
                         .map(Principals::firstNamePrincipal)
                         .ifPresent(otherPrincipals::add);
@@ -84,10 +96,16 @@ public class OAuthRealm implements Realm {
                 Optional.ofNullable(userInfo.getLocale())
                         .map(Principals::localePrincipal)
                         .ifPresent(otherPrincipals::add);
-                Optional.ofNullable(userInfo.getPicture())
-                        .map(String::valueOf)
-                        .map((picture) -> new SimplePrincipalProvider("picture", picture))
-                        .ifPresent(otherPrincipals::add);
+
+                // Standard claims as principals under their own name (SDK neutral)
+                for (String claimName : UserInfo.getStandardClaimNames()) {
+                    Optional.ofNullable(userInfo.getStringClaim(claimName))
+                            .map(claimValue -> new SimplePrincipalProvider(claimName, claimValue))
+                            .ifPresent(otherPrincipals::add);
+                }
+
+                // User info object as principal (SDK specific)
+                otherPrincipals.add(new UserInfoPrincipalProvider(new SerializableUserInfo(userInfo)));
             });
 
             return authenticationInfo;

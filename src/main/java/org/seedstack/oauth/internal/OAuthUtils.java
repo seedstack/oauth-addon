@@ -131,7 +131,7 @@ final class OAuthUtils {
     static Scope createScope(List<String> scopes, OAuthProvider oAuthProvider) {
         Scope scope;
         if (scopes == null) {
-            scope = new Scope();
+            return null;
         } else {
             scope = new Scope(scopes.toArray(new String[0]));
         }

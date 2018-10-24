@@ -57,22 +57,20 @@ public class OAuthAuthenticationFilter extends AuthenticatingFilter implements S
     private OAuthConfig oauthConfig;
 
     @Override
-    protected AuthenticationToken createToken(ServletRequest request, ServletResponse response) throws Exception {
+    protected AuthenticationToken createToken(ServletRequest request, ServletResponse response) {
         return new OAuthAuthenticationTokenImpl(
                 resolveAccessToken(WebUtils.toHttp(request))
                         .orElseThrow(() -> new AuthenticationException("Missing access token")));
     }
 
-    private Optional<AccessToken> resolveAccessToken(HttpServletRequest request) throws ParseException {
+    private Optional<AccessToken> resolveAccessToken(HttpServletRequest request) {
         String authorizationHeader = request.getHeader(AUTHORIZATION);
         if (authorizationHeader != null) {
             // Bearer access token
             try {
                 return Optional.of(BearerAccessToken.parse(authorizationHeader));
             } catch (ParseException e) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Unable to parse bearer access token from: " + authorizationHeader);
-                }
+                LOGGER.debug("Unable to parse bearer access token from: " + authorizationHeader);
             }
         }
         return Optional.empty();

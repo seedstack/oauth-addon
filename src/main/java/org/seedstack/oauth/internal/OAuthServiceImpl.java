@@ -102,7 +102,7 @@ public class OAuthServiceImpl implements OAuthService {
         }
 
         if (algorithm == null) {
-            throw new TokenValidationException("Algorithm is valid");
+            throw new TokenValidationException("Algorithm is invalid (null)");
         }
 
         if (accessTokenHash == null) {
