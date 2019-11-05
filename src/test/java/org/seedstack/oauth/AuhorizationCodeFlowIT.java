@@ -24,7 +24,7 @@ public class AuhorizationCodeFlowIT {
     private static final String J_SESSION_ID = "JSESSIONID";
     private static final String LOCATION = "Location";
     private String jSessionId;
-    @Configuration("web.runtime.baseUrl")
+    @Configuration("runtime.web.baseUrl")
     private String baseUrl;
 
     @Test
@@ -35,7 +35,7 @@ public class AuhorizationCodeFlowIT {
                 .log().status()
                 .statusCode(302)
                 .when()
-                .get(baseUrl + "api/profile");
+                .get(baseUrl + "/api/profile");
 
         extractSessionId(response1);
 

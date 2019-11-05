@@ -9,8 +9,8 @@
 package org.seedstack.oauth.fixtures;
 
 import org.apache.commons.lang.StringUtils;
-import org.seedstack.oauth.AccessTokenValidator;
-import org.seedstack.oauth.TokenValidationException;
+import org.seedstack.oauth.spi.AccessTokenValidator;
+import org.seedstack.oauth.spi.TokenValidationException;
 
 public class TestAccessTokenValidator implements AccessTokenValidator {
     @Override

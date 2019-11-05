@@ -24,7 +24,10 @@ import com.nimbusds.openid.connect.sdk.Nonce;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 import javax.servlet.ServletRequest;
@@ -37,7 +40,7 @@ import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.web.filter.authc.AuthenticatingFilter;
 import org.seedstack.oauth.OAuthConfig;
-import org.seedstack.oauth.OAuthService;
+import org.seedstack.oauth.spi.OAuthService;
 import org.seedstack.seed.Configuration;
 import org.seedstack.seed.SeedException;
 import org.seedstack.seed.web.SecurityFilter;
@@ -165,10 +168,10 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
         return (Nonce) SecurityUtils.getSubject().getSession().getAttribute(OAuthAuthenticationFilter.NONCE_KEY);
     }
 
-    private Map<String, String> getParameterMap(HttpServletRequest httpServletRequest) {
-        Map<String, String> map = new HashMap<>();
+    private Map<String, List<String>> getParameterMap(HttpServletRequest httpServletRequest) {
+        Map<String, List<String>> map = new HashMap<>();
         for (Map.Entry<String, String[]> parameter : httpServletRequest.getParameterMap().entrySet()) {
-            map.put(parameter.getKey(), parameter.getValue()[0]);
+            map.put(parameter.getKey(), new ArrayList<>(Arrays.asList(parameter.getValue())));
         }
         return map;
     }

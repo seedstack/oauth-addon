@@ -6,7 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package org.seedstack.oauth;
+package org.seedstack.oauth.spi;
 
 import org.seedstack.seed.security.AuthenticationException;
 

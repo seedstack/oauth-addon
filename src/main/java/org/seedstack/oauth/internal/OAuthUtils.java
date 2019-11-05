@@ -32,11 +32,12 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.seedstack.oauth.OAuthConfig;
-import org.seedstack.oauth.OAuthProvider;
+import org.seedstack.oauth.spi.OAuthProvider;
 import org.seedstack.seed.SeedException;
 import org.seedstack.shed.exception.BaseException;
 
@@ -65,8 +66,8 @@ final class OAuthUtils {
         }
     }
 
-    static Map<String, String> extractQueryParameters(URI uri) {
-        final Map<String, String> queryPairs = new HashMap<>();
+    static Map<String, List<String>> extractQueryParameters(URI uri) {
+        final Map<String, List<String>> queryPairs = new HashMap<>();
         String query = uri.getQuery();
         if (!Strings.isNullOrEmpty(query)) {
             try {
@@ -76,7 +77,7 @@ final class OAuthUtils {
                     final String key = idx > 0 ? URLDecoder.decode(pair.substring(0, idx), "UTF-8") : pair;
                     final String value = idx > 0 && pair.length() > idx + 1 ? URLDecoder.decode(pair.substring(idx + 1),
                             "UTF-8") : null;
-                    queryPairs.put(key, value);
+                    queryPairs.computeIfAbsent(key, f -> new ArrayList<>()).add(value);
                 }
             } catch (UnsupportedEncodingException e) {
                 throw SeedException.wrap(e, OAuthErrorCode.UNABLE_TO_PROCESS_URI);
@@ -88,7 +89,7 @@ final class OAuthUtils {
     static OAuthAuthenticationTokenImpl requestTokens(OAuthProvider oauthProvider, OAuthConfig oauthConfig,
             AuthorizationGrant authorizationGrant, Nonce nonce, List<String> scopes) {
         URI endpointURI = oauthProvider.getTokenEndpoint();
-        Map<String, String> parameters = OAuthUtils.extractQueryParameters(endpointURI);
+        Map<String, List<String>> parameters = OAuthUtils.extractQueryParameters(endpointURI);
         endpointURI = OAuthUtils.stripQueryString(endpointURI);
 
         TokenRequest tokenRequest = new TokenRequest(
@@ -98,6 +99,7 @@ final class OAuthUtils {
                         new Secret(checkNotNull(oauthConfig.getClientSecret(), "Missing client secret"))),
                 authorizationGrant,
                 createScope(scopes, oauthProvider),
+                new ArrayList<>(),
                 parameters);
 
         TokenResponse tokenResponse;

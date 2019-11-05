@@ -10,9 +10,9 @@ package org.seedstack.oauth.internal;
 
 import com.google.inject.PrivateModule;
 import com.google.inject.util.Providers;
-import org.seedstack.oauth.AccessTokenValidator;
-import org.seedstack.oauth.OAuthProvider;
-import org.seedstack.oauth.OAuthService;
+import org.seedstack.oauth.spi.AccessTokenValidator;
+import org.seedstack.oauth.spi.OAuthProvider;
+import org.seedstack.oauth.spi.OAuthService;
 
 class OAuthModule extends PrivateModule {
     private final OidcDiscoveryDocument discoveryDocument;

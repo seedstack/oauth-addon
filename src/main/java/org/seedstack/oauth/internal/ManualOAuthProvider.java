@@ -15,7 +15,7 @@ import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import org.seedstack.oauth.OAuthConfig;
-import org.seedstack.oauth.OAuthProvider;
+import org.seedstack.oauth.spi.OAuthProvider;
 import org.seedstack.seed.Application;
 
 class ManualOAuthProvider implements Provider<OAuthProvider> {

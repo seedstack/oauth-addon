@@ -6,7 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package org.seedstack.oauth;
+package org.seedstack.oauth.spi;
 
 /**
  * Implement this interface to provide a custom validator for OAuth access token. This is only required when NOT using

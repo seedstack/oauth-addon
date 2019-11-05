@@ -22,19 +22,19 @@ security:
     - pattern: /api/**
       filters: oauth
   oauth:
-    redirect: ${web.runtime.baseUrl}callback
+    redirect: ${runtime.web.baseUrl}/callback
     clientId: testClientId
     clientSecret: testClientSecret
     scopes: email
     accessTokenValidator: org.seedstack.oauth.fixtures.TestAccessTokenValidator
     provider:
-      authorization: ${web.runtime.baseUrl}api/provider/authorize
-      token: ${web.runtime.baseUrl}api/provider/create-token
-      revocation: ${web.runtime.baseUrl}api/provider/token/revoke
+      authorization: ${runtime.web.baseUrl}/api/provider/authorize
+      token: ${runtime.web.baseUrl}/api/provider/create-token
+      revocation: ${runtime.web.baseUrl}/api/provider/token/revoke
     openIdConnect:
       issuer: https://mockedserver.com
-      jwks: ${web.runtime.baseUrl}JWKset.json
-      userInfo: ${web.runtime.baseUrl}api/provider/userInfo
+      jwks: ${runtime.web.baseUrl}/JWKset.json
+      userInfo: ${runtime.web.baseUrl}/api/provider/userInfo
       unsecuredTokenAllowed: false
 
 security<noProvider>:

@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 import org.seedstack.coffig.Config;
 import org.seedstack.coffig.SingleValue;
+import org.seedstack.oauth.spi.AccessTokenValidator;
 
 @Config("security.oauth")
 public class OAuthConfig {

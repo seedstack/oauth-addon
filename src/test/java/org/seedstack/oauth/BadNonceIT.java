@@ -25,7 +25,7 @@ import org.seedstack.seed.undertow.LaunchWithUndertow;
 public class BadNonceIT {
     private static final String J_SESSION_ID = "JSESSIONID";
     private static final String LOCATION = "Location";
-    @Configuration("web.runtime.baseUrl")
+    @Configuration("runtime.web.baseUrl")
     private String baseUrl;
     private String jSessionId;
 
@@ -37,7 +37,7 @@ public class BadNonceIT {
                 .log().status()
                 .statusCode(302)
                 .when()
-                .get(baseUrl + "api/profile");
+                .get(baseUrl + "/api/profile");
 
         extractSessionId(response1);
 

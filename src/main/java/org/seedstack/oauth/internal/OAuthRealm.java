@@ -18,7 +18,6 @@ import com.nimbusds.openid.connect.sdk.UserInfoResponse;
 import com.nimbusds.openid.connect.sdk.UserInfoSuccessResponse;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import java.io.IOException;
-import java.io.Serializable;
 import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
@@ -26,9 +25,9 @@ import java.util.Optional;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Named;
-import org.seedstack.oauth.OAuthAuthenticationToken;
-import org.seedstack.oauth.OAuthProvider;
-import org.seedstack.oauth.OAuthService;
+import org.seedstack.oauth.spi.OAuthAuthenticationToken;
+import org.seedstack.oauth.spi.OAuthProvider;
+import org.seedstack.oauth.spi.OAuthService;
 import org.seedstack.seed.security.AuthenticationException;
 import org.seedstack.seed.security.AuthenticationInfo;
 import org.seedstack.seed.security.AuthenticationToken;
@@ -56,7 +55,7 @@ public class OAuthRealm implements Realm {
     public Set<String> getRealmRoles(PrincipalProvider<?> identityPrincipal,
             Collection<PrincipalProvider<?>> otherPrincipals) {
         for (PrincipalProvider<?> principalProvider : otherPrincipals) {
-            Serializable principal = principalProvider.getPrincipal();
+            Object principal = principalProvider.get();
             if (principal instanceof Scope) {
                 return new HashSet<>(((Scope) principal).toStringList());
             }
@@ -77,9 +76,6 @@ public class OAuthRealm implements Realm {
                             .orElse(new AuthenticationInfo("", accessToken));
 
             Collection<PrincipalProvider<?>> otherPrincipals = authenticationInfo.getOtherPrincipals();
-
-            // Scope as principal
-            otherPrincipals.add(new ScopePrincipalProvider(accessToken.getScope()));
 
             // User info-based principals
             fetchUserInfo(accessToken).ifPresent(userInfo -> {
@@ -105,8 +101,11 @@ public class OAuthRealm implements Realm {
                 }
 
                 // User info object as principal (SDK specific)
-                otherPrincipals.add(new UserInfoPrincipalProvider(new SerializableUserInfo(userInfo)));
+                otherPrincipals.add(new UserInfoPrincipalProvider(userInfo));
             });
+
+            // Scope as principal (SDK specific)
+            otherPrincipals.add(new ScopePrincipalProvider(accessToken.getScope()));
 
             return authenticationInfo;
         } else {

@@ -15,8 +15,9 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.RefreshToken;
 import com.nimbusds.openid.connect.sdk.Nonce;
 import java.text.ParseException;
+import org.seedstack.oauth.spi.OidcAuthenticationToken;
 
-public class OidcAuthenticationTokenImpl extends OAuthAuthenticationTokenImpl implements org.seedstack.oauth.OidcAuthenticationToken {
+public class OidcAuthenticationTokenImpl extends OAuthAuthenticationTokenImpl implements OidcAuthenticationToken {
     private final JWT idToken;
     private final Nonce nonce;
 

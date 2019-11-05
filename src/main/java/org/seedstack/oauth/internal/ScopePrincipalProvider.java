@@ -5,6 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.oauth.internal;
 
 import com.nimbusds.oauth2.sdk.Scope;
@@ -20,7 +21,7 @@ public class ScopePrincipalProvider implements PrincipalProvider<Scope>, Seriali
     }
 
     @Override
-    public Scope getPrincipal() {
+    public Scope get() {
         return scope;
     }
 }

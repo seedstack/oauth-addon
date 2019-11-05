@@ -22,8 +22,8 @@
     <version>1.1.0-SNAPSHOT</version>
 
     <properties>
-        <seed.version>3.6.2</seed.version>
-        <oauth2-oidc-sdk.version>5.38</oauth2-oidc-sdk.version>
+        <seed.version>3.9.1-SNAPSHOT</seed.version>
+        <oauth2-oidc-sdk.version>6.5</oauth2-oidc-sdk.version>
         <compatibility.skip>true</compatibility.skip>
 
         <bintray.package>oauth-addon</bintray.package>
@@ -61,6 +61,7 @@
                             <licenseMerge>BSD|The New BSD License</licenseMerge>
                             <licenseMerge>BSD|BSD License</licenseMerge>
                             <licenseMerge>CDDL|GPLv2+CE</licenseMerge>
+                            <licenseMerge>CDDL|CDDL/GPLv2+CE</licenseMerge>
                             <licenseMerge>CDDL|Common Development and Distribution License (CDDL) v1.0</licenseMerge>
                             <licenseMerge>CDDL|CDDL + GPLv2 with classpath exception</licenseMerge>
                             <licenseMerge>CDDL|GNU General Public License, Version 2 with the Classpath Exception</licenseMerge>

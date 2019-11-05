@@ -23,6 +23,7 @@ import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
 import com.nimbusds.openid.connect.sdk.Nonce;
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -37,8 +38,8 @@ import org.apache.shiro.subject.Subject;
 import org.apache.shiro.web.filter.authc.AuthenticatingFilter;
 import org.apache.shiro.web.util.WebUtils;
 import org.seedstack.oauth.OAuthConfig;
-import org.seedstack.oauth.OAuthProvider;
-import org.seedstack.oauth.OAuthService;
+import org.seedstack.oauth.spi.OAuthProvider;
+import org.seedstack.oauth.spi.OAuthService;
 import org.seedstack.seed.Configuration;
 import org.seedstack.seed.web.SecurityFilter;
 import org.seedstack.seed.web.security.SessionRegeneratingFilter;
@@ -112,7 +113,7 @@ public class OAuthAuthenticationFilter extends AuthenticatingFilter implements S
     private URI buildAuthorizationURI(State state) {
         OAuthProvider oauthProvider = oAuthService.getOAuthProvider();
         URI endpointURI = oauthProvider.getAuthorizationEndpoint();
-        Map<String, String> parameters = OAuthUtils.extractQueryParameters(endpointURI);
+        Map<String, List<String>> parameters = OAuthUtils.extractQueryParameters(endpointURI);
         endpointURI = OAuthUtils.stripQueryString(endpointURI);
 
         AuthorizationRequest.Builder builder = new AuthorizationRequest.Builder(
@@ -123,8 +124,8 @@ public class OAuthAuthenticationFilter extends AuthenticatingFilter implements S
                 .endpointURI(endpointURI)
                 .state(state);
 
-        for (Map.Entry<String, String> parameter : parameters.entrySet()) {
-            builder.customParameter(parameter.getKey(), parameter.getValue());
+        for (Map.Entry<String, List<String>> parameter : parameters.entrySet()) {
+            builder.customParameter(parameter.getKey(), parameter.getValue().toArray(new String[0]));
         }
 
         return builder.build().toURI();
@@ -133,7 +134,7 @@ public class OAuthAuthenticationFilter extends AuthenticatingFilter implements S
     private URI buildAuthenticationURI(State state, Nonce nonce) {
         OAuthProvider oauthProvider = oAuthService.getOAuthProvider();
         URI endpointURI = oauthProvider.getAuthorizationEndpoint();
-        Map<String, String> parameters = OAuthUtils.extractQueryParameters(endpointURI);
+        Map<String, List<String>> parameters = OAuthUtils.extractQueryParameters(endpointURI);
         endpointURI = OAuthUtils.stripQueryString(endpointURI);
 
         AuthenticationRequest.Builder builder = new AuthenticationRequest.Builder(
@@ -145,8 +146,8 @@ public class OAuthAuthenticationFilter extends AuthenticatingFilter implements S
                 .state(state)
                 .nonce(nonce);
 
-        for (Map.Entry<String, String> parameter : parameters.entrySet()) {
-            builder.customParameter(parameter.getKey(), parameter.getValue());
+        for (Map.Entry<String, List<String>> parameter : parameters.entrySet()) {
+            builder.customParameter(parameter.getKey(), parameter.getValue().toArray(new String[0]));
         }
 
         return builder.build().toURI();

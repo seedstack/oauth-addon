@@ -29,16 +29,16 @@ public class ProfileResource {
     public ProfileRepresentation sayHello() {
         ProfileRepresentation profileRepresentation = new ProfileRepresentation();
         Optional.ofNullable(securitySupport.getSimplePrincipalByName(Principals.FIRST_NAME))
-                .map(SimplePrincipalProvider::getPrincipal)
+                .map(SimplePrincipalProvider::get)
                 .ifPresent(profileRepresentation::setFirstName);
         Optional.ofNullable(securitySupport.getSimplePrincipalByName(Principals.LAST_NAME))
-                .map(SimplePrincipalProvider::getPrincipal)
+                .map(SimplePrincipalProvider::get)
                 .ifPresent(profileRepresentation::setLastName);
         Optional.ofNullable(securitySupport.getSimplePrincipalByName(Principals.FULL_NAME))
-                .map(SimplePrincipalProvider::getPrincipal)
+                .map(SimplePrincipalProvider::get)
                 .ifPresent(profileRepresentation::setFullName);
         Optional.ofNullable(securitySupport.getSimplePrincipalByName("picture"))
-                .map(SimplePrincipalProvider::getPrincipal)
+                .map(SimplePrincipalProvider::get)
                 .ifPresent(profileRepresentation::setPictureUrl);
 
         Map<String, String> principals = new HashMap<>();

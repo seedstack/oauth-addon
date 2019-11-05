@@ -5,21 +5,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.oauth.internal;
 
-import java.io.Serializable;
+import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import org.seedstack.seed.security.principals.PrincipalProvider;
 
-public class UserInfoPrincipalProvider implements PrincipalProvider<SerializableUserInfo>, Serializable {
-    private static final long serialVersionUID = 1L;
-    private final SerializableUserInfo userInfo;
+public class UserInfoPrincipalProvider implements PrincipalProvider<UserInfo> {
+    private final UserInfo userInfo;
 
-    public UserInfoPrincipalProvider(SerializableUserInfo userInfo) {
+    public UserInfoPrincipalProvider(UserInfo userInfo) {
         this.userInfo = userInfo;
     }
 
     @Override
-    public SerializableUserInfo getPrincipal() {
+    public UserInfo get() {
         return userInfo;
     }
 }

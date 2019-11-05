@@ -13,7 +13,7 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.RefreshToken;
 import java.util.Optional;
 import org.apache.shiro.authc.AuthenticationToken;
-import org.seedstack.oauth.OAuthAuthenticationToken;
+import org.seedstack.oauth.spi.OAuthAuthenticationToken;
 
 public class OAuthAuthenticationTokenImpl implements AuthenticationToken, OAuthAuthenticationToken {
     private final AccessToken accessToken;

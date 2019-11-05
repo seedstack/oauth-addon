@@ -39,12 +39,12 @@ import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Provider;
-import org.seedstack.oauth.AccessTokenValidator;
-import org.seedstack.oauth.OAuthAuthenticationToken;
+import org.seedstack.oauth.spi.AccessTokenValidator;
+import org.seedstack.oauth.spi.OAuthAuthenticationToken;
 import org.seedstack.oauth.OAuthConfig;
-import org.seedstack.oauth.OAuthProvider;
-import org.seedstack.oauth.OAuthService;
-import org.seedstack.oauth.TokenValidationException;
+import org.seedstack.oauth.spi.OAuthProvider;
+import org.seedstack.oauth.spi.OAuthService;
+import org.seedstack.oauth.spi.TokenValidationException;
 import org.seedstack.seed.Configuration;
 import org.seedstack.seed.security.AuthenticationException;
 
@@ -76,7 +76,7 @@ public class OAuthServiceImpl implements OAuthService {
             );
 
             // Validate id and access token using OpenId Connect specification
-            validateOicdAccessToken(
+            validateOidcAccessToken(
                     accessToken,
                     idToken.getHeader().getAlgorithm(),
                     jwtClaimsSet.getAccessTokenHash()
@@ -95,7 +95,7 @@ public class OAuthServiceImpl implements OAuthService {
         }
     }
 
-    private void validateOicdAccessToken(AccessToken accessToken, Algorithm algorithm,
+    private void validateOidcAccessToken(AccessToken accessToken, Algorithm algorithm,
             AccessTokenHash accessTokenHash) {
         if (accessToken == null) {
             throw new TokenValidationException("Access Token is not a valid token");

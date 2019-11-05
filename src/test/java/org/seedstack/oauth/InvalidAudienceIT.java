@@ -27,7 +27,7 @@ public class InvalidAudienceIT {
     private static final String J_SESSION_ID = "JSESSIONID";
     private static final String LOCATION = "Location";
     private static final String INCORRECT_STATE_VAL = "KOfmAYYIIZQ_W8OBIWtz3Xs2cWKQqWYtM";
-    @Configuration("web.runtime.baseUrl")
+    @Configuration("runtime.web.baseUrl")
     private String baseUrl;
     private String jSessionId;
 
@@ -39,7 +39,7 @@ public class InvalidAudienceIT {
                 .log().status()
                 .statusCode(302)
                 .when()
-                .get(baseUrl + "api/profile");
+                .get(baseUrl + "/api/profile");
 
         extractSessionId(response1);
 
@@ -68,7 +68,7 @@ public class InvalidAudienceIT {
                 .log().status()
                 .statusCode(302)
                 .when()
-                .get(baseUrl + "api/profile");
+                .get(baseUrl + "/api/profile");
 
         extractSessionId(response1);
 
