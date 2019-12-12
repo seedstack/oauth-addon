@@ -1,4 +1,4 @@
-# Version 1.1.0 (2018-07-30)
+# Version 1.1.0 (2019-12-12)
 
 * [new] OAuthRealm now provides subject roles based on OAuth scopes.
 * [new] UserInfo data is now available as a subject principal.
