@@ -1,6 +1,6 @@
 <!--
 
-    Copyright © 2013-2018, The SeedStack authors <http://seedstack.org>
+    Copyright © 2013-2019, The SeedStack authors <http://seedstack.org>
 
     This Source Code Form is subject to the terms of the Mozilla Public
     License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -14,7 +14,7 @@
     <parent>
         <groupId>org.seedstack.poms</groupId>
         <artifactId>parent-internal</artifactId>
-        <version>3.2.1</version>
+        <version>3.4.8-SNAPSHOT</version>
     </parent>
 
     <groupId>org.seedstack.addons.oauth</groupId>
@@ -23,7 +23,7 @@
 
     <properties>
         <seed.version>3.9.1-SNAPSHOT</seed.version>
-        <oauth2-oidc-sdk.version>6.5</oauth2-oidc-sdk.version>
+        <oauth2-oidc-sdk.version>6.21</oauth2-oidc-sdk.version>
         <compatibility.skip>true</compatibility.skip>
 
         <bintray.package>oauth-addon</bintray.package>
@@ -98,7 +98,7 @@
             <dependency>
                 <groupId>com.nimbusds</groupId>
                 <artifactId>nimbus-jose-jwt</artifactId>
-                <version>5.1</version>
+                <version>8.3</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -173,6 +173,12 @@
             <artifactId>rest-assured</artifactId>
             <version>${rest-assured.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.activation</groupId>
+                    <artifactId>activation</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 
