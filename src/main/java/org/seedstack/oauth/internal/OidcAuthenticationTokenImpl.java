@@ -17,6 +17,7 @@ import java.text.ParseException;
 import org.seedstack.oauth.spi.OidcAuthenticationToken;
 
 public class OidcAuthenticationTokenImpl extends OAuthAuthenticationTokenImpl implements OidcAuthenticationToken {
+    private static final long serialVersionUID = 1L;
     private final JWT idToken;
     private final Nonce nonce;
 

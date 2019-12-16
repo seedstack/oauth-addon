@@ -15,6 +15,7 @@ import org.apache.shiro.authc.AuthenticationToken;
 import org.seedstack.oauth.spi.OAuthAuthenticationToken;
 
 public class OAuthAuthenticationTokenImpl implements AuthenticationToken, OAuthAuthenticationToken {
+    private static final long serialVersionUID = 1L;
     private final AccessToken accessToken;
     private final RefreshToken refreshToken;
 
