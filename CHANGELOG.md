@@ -1,3 +1,7 @@
+# Version 1.1.1 (2020-08-10)
+
+* [chg] Updated OAuth2 SDK
+
 # Version 1.1.0 (2019-12-19)
 
 * [new] OAuthRealm now provides subject roles based on OAuth scopes.

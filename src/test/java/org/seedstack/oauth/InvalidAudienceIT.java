@@ -7,17 +7,16 @@
  */
 package org.seedstack.oauth;
 
-import static io.restassured.RestAssured.given;
-
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
-import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.seedstack.seed.Configuration;
 import org.seedstack.seed.testing.ConfigurationProperty;
 import org.seedstack.seed.testing.junit4.SeedITRunner;
 import org.seedstack.seed.undertow.LaunchWithUndertow;
+
+import static io.restassured.RestAssured.given;
 
 @RunWith(SeedITRunner.class)
 @LaunchWithUndertow
@@ -101,7 +100,8 @@ public class InvalidAudienceIT {
     }
 
     private String modifyAuthCodeReqWithState(String authCodeRequest) {
-        String state = StringUtils.substringBetween(authCodeRequest, "state=", "&");
+        int beginIndex = authCodeRequest.indexOf("state=");
+        String state = authCodeRequest.substring(beginIndex, authCodeRequest.indexOf("&", beginIndex));
         authCodeRequest = authCodeRequest.replaceAll(state, INCORRECT_STATE_VAL);
         return authCodeRequest;
     }
