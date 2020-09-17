@@ -1,3 +1,7 @@
+# Version 1.1.2 (2020-09-17)
+
+* [fix] Force `json-smart` transitive dependency to use a fixed version instead of a range, which can break build.
+
 # Version 1.1.1 (2020-08-10)
 
 * [chg] Updated OAuth2 SDK
