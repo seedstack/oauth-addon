@@ -7,13 +7,14 @@
  */
 package org.seedstack.oauth;
 
+import org.seedstack.coffig.Config;
+import org.seedstack.coffig.SingleValue;
+import org.seedstack.oauth.spi.AccessTokenValidator;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.seedstack.coffig.Config;
-import org.seedstack.coffig.SingleValue;
-import org.seedstack.oauth.spi.AccessTokenValidator;
 
 @Config("security.oauth")
 public class OAuthConfig {
@@ -103,7 +104,9 @@ public class OAuthConfig {
         private URI jwks;
         private String signingAlgorithm = "RS256";
         private URI userInfo;
+        private List<String> audiences = new ArrayList<>();
         private boolean unsecuredTokenAllowed;
+        private boolean alwaysValidateHash;
 
         public boolean isEnabled() {
             return enabled;
@@ -150,12 +153,30 @@ public class OAuthConfig {
             return this;
         }
 
+        public List<String> getAudiences() {
+            return Collections.unmodifiableList(audiences);
+        }
+
+        public OpenIdConnectConfig setAudiences(List<String> audiences) {
+            this.audiences = new ArrayList<>(audiences);
+            return this;
+        }
+
         public boolean isUnsecuredTokenAllowed() {
             return unsecuredTokenAllowed;
         }
 
         public OpenIdConnectConfig setUnsecuredTokenAllowed(boolean unsecuredTokenAllowed) {
             this.unsecuredTokenAllowed = unsecuredTokenAllowed;
+            return this;
+        }
+
+        public boolean isAlwaysValidateHash() {
+            return alwaysValidateHash;
+        }
+
+        public OpenIdConnectConfig setAlwaysValidateHash(boolean alwaysValidateHash) {
+            this.alwaysValidateHash = alwaysValidateHash;
             return this;
         }
     }

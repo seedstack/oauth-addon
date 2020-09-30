@@ -7,9 +7,6 @@
  */
 package org.seedstack.oauth.internal;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.seedstack.oauth.internal.OAuthUtils.requestTokens;
-
 import com.nimbusds.jose.Algorithm;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -32,20 +29,24 @@ import com.nimbusds.openid.connect.sdk.claims.IDTokenClaimsSet;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenClaimsVerifier;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import com.nimbusds.openid.connect.sdk.validators.InvalidHashException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.List;
-import java.util.Optional;
-import javax.inject.Inject;
-import javax.inject.Provider;
+import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.spi.AccessTokenValidator;
 import org.seedstack.oauth.spi.OAuthAuthenticationToken;
-import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.spi.OAuthProvider;
 import org.seedstack.oauth.spi.OAuthService;
 import org.seedstack.oauth.spi.TokenValidationException;
 import org.seedstack.seed.Configuration;
 import org.seedstack.seed.security.AuthenticationException;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.List;
+import java.util.Optional;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.seedstack.oauth.internal.OAuthUtils.requestTokens;
 
 public class OAuthServiceImpl implements OAuthService {
     @Configuration
@@ -95,7 +96,7 @@ public class OAuthServiceImpl implements OAuthService {
     }
 
     private void validateOidcAccessToken(AccessToken accessToken, Algorithm algorithm,
-            AccessTokenHash accessTokenHash) {
+                                         AccessTokenHash accessTokenHash) {
         if (accessToken == null) {
             throw new TokenValidationException("Access Token is not a valid token");
         }
@@ -104,21 +105,24 @@ public class OAuthServiceImpl implements OAuthService {
             throw new TokenValidationException("Algorithm is invalid (null)");
         }
 
-        if (accessTokenHash == null) {
-            throw new TokenValidationException("Access Token hash (at_hash claim) is not a valid hash claim");
-        }
-
         if (algorithm instanceof JWSAlgorithm) {
             JWSAlgorithm expectedAlgorithm = JWSAlgorithm.parse(oauthConfig.getSigningAlgorithm());
             if (!expectedAlgorithm.equals(algorithm)) {
                 throw new TokenValidationException("Access token signing algorithm (" + algorithm.getName()
                         + ") does not match the expected algorithm (" + expectedAlgorithm.getName() + ")");
             }
-            try {
-                com.nimbusds.openid.connect.sdk.validators.AccessTokenValidator
-                        .validate(accessToken, (JWSAlgorithm) algorithm, accessTokenHash);
-            } catch (InvalidHashException e) {
-                throw new TokenValidationException("Failed to validate access token", e);
+
+            if (accessTokenHash != null) {
+                try {
+                    com.nimbusds.openid.connect.sdk.validators.AccessTokenValidator
+                            .validate(accessToken, (JWSAlgorithm) algorithm, accessTokenHash);
+                } catch (InvalidHashException e) {
+                    throw new TokenValidationException("Failed to validate access token", e);
+                }
+            } else {
+                if (oauthConfig.openIdConnect().isAlwaysValidateHash()) {
+                    throw new TokenValidationException("Access Token hash (at_hash claim) is not a valid hash claim");
+                }
             }
         } else if (oauthConfig.openIdConnect().isUnsecuredTokenAllowed()) {
             validateAccessToken(accessToken);
@@ -157,10 +161,10 @@ public class OAuthServiceImpl implements OAuthService {
         }
 
         // Check that the token is intended for this client
-        List<Audience> audience = claims.getAudience();
-        if (!audience.contains(new Audience(clientId))) {
-            throw new TokenValidationException(
-                    "The received ID token is not intended for this client (audience mismatch)");
+        List<Audience> allowedAudiences = Audience.create(oauthConfig.openIdConnect().getAudiences());
+        allowedAudiences.add(new Audience(oauthConfig.getClientId()));
+        if (!Audience.matchesAny(allowedAudiences, claims.getAudience())) {
+            throw new TokenValidationException("The received ID token is not intended for this client (audience mismatch)");
         }
 
         return claims;

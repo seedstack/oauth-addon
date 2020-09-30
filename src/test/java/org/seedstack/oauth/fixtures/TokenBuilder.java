@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package org.seedstack.oauth.fixtures.provider;
+package org.seedstack.oauth.fixtures;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -29,6 +29,7 @@ import java.util.Date;
 import java.util.List;
 import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.fixtures.TokenErrorCode;
+import org.seedstack.oauth.fixtures.provider.TokenData;
 import org.seedstack.seed.SeedException;
 
 public class TokenBuilder {
@@ -45,7 +46,7 @@ public class TokenBuilder {
     private boolean buildOnlyAccessToken;
     private OAuthConfig oauthConfig;
 
-    TokenBuilder(OAuthConfig oauthConfig) {
+    public TokenBuilder(OAuthConfig oauthConfig) {
         this.oauthConfig = oauthConfig;
     }
 

@@ -13,6 +13,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.seedstack.oauth.OAuthConfig;
+import org.seedstack.oauth.fixtures.TokenBuilder;
 import org.seedstack.seed.Configuration;
 
 @Path("/provider/create-token")

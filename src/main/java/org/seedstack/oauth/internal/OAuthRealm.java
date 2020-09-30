@@ -16,14 +16,6 @@ import com.nimbusds.openid.connect.sdk.UserInfoRequest;
 import com.nimbusds.openid.connect.sdk.UserInfoResponse;
 import com.nimbusds.openid.connect.sdk.UserInfoSuccessResponse;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
-import java.io.IOException;
-import java.net.URI;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-import javax.inject.Inject;
-import javax.inject.Named;
 import org.seedstack.oauth.spi.OAuthAuthenticationToken;
 import org.seedstack.oauth.spi.OAuthProvider;
 import org.seedstack.oauth.spi.OAuthService;
@@ -39,6 +31,15 @@ import org.seedstack.seed.security.principals.SimplePrincipalProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import java.io.IOException;
+import java.net.URI;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+
 public class OAuthRealm implements Realm {
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuthRealm.class);
     @Inject
@@ -52,14 +53,15 @@ public class OAuthRealm implements Realm {
 
     @Override
     public Set<String> getRealmRoles(PrincipalProvider<?> identityPrincipal,
-            Collection<PrincipalProvider<?>> otherPrincipals) {
+                                     Collection<PrincipalProvider<?>> otherPrincipals) {
+        Set<String> roles = new HashSet<>();
         for (PrincipalProvider<?> principalProvider : otherPrincipals) {
             Object principal = principalProvider.get();
             if (principal instanceof Scope) {
-                return new HashSet<>(((Scope) principal).toStringList());
+                roles.addAll(((Scope) principal).toStringList());
             }
         }
-        throw new IllegalStateException("No scope object found in the principals");
+        return roles;
     }
 
     @Override
@@ -104,7 +106,10 @@ public class OAuthRealm implements Realm {
             });
 
             // Scope as principal (SDK specific)
-            otherPrincipals.add(new ScopePrincipalProvider(accessToken.getScope()));
+            Scope scope = accessToken.getScope();
+            if (scope != null) {
+                otherPrincipals.add(new ScopePrincipalProvider(scope));
+            }
 
             return authenticationInfo;
         } else {
