@@ -1,3 +1,8 @@
+# Version 1.1.3 (2020-10-05)
+
+* [fix] Avoid throwing an exception when no scope is returned by the identity provider.
+* [fix] Check `at_hash` claim only if present.
+
 # Version 1.1.2 (2020-09-17)
 
 * [fix] Force `json-smart` transitive dependency to use a fixed version instead of a range, which can break build.
