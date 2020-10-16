@@ -197,6 +197,7 @@ public class OAuthServiceImpl implements OAuthService {
             return validateJwtAccessToken(accessToken, JWSAlgorithm.parse(oauthConfig.algorithms().getAccessSigningAlgorithm()));
         } catch (TokenValidationException e) {
             // Opaque token then
+            LOGGER.debug("Falling back to opaque token validation after token failed to validate as JWT: {}", e.getMessage());
             return validateOpaqueAccessToken(accessToken);
         }
     }
@@ -236,7 +237,7 @@ public class OAuthServiceImpl implements OAuthService {
         try {
             return jwtProcessor.process(accessToken.getValue(), null);
         } catch (java.text.ParseException | BadJOSEException | JOSEException e) {
-            throw new TokenValidationException("Unable to validate JWT access token", e);
+            throw new TokenValidationException("Unable to validate JWT access token: " + e.getMessage(), e);
         }
     }
 

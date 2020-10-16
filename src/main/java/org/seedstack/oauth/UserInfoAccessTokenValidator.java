@@ -7,6 +7,7 @@
  */
 package org.seedstack.oauth;
 
+import com.google.common.base.Strings;
 import org.seedstack.oauth.spi.AccessTokenValidator;
 import org.seedstack.oauth.spi.OAuthProvider;
 import org.seedstack.oauth.spi.TokenValidationException;
@@ -14,7 +15,9 @@ import org.seedstack.seed.Logging;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.Optional;
@@ -39,14 +42,33 @@ public class UserInfoAccessTokenValidator implements AccessTokenValidator {
                 urlConnection.setRequestProperty("Authorization", "Bearer " + accessToken);
                 urlConnection.setRequestMethod("GET");
                 urlConnection.setUseCaches(false);
+
                 if (urlConnection.getResponseCode() != 200) {
-                    throw new TokenValidationException("Unable to validate the access token (HTTP status " + urlConnection.getResponseCode() + ")");
+                    throw new TokenValidationException("Unable to validate the access token (HTTP status " + urlConnection.getResponseCode() + "): " + getErrorBody(urlConnection));
                 }
             } catch (IOException e) {
-                throw new TokenValidationException("Unable to call the userInfo endpoint", e);
+                throw new TokenValidationException("Unable to request the userInfo endpoint", e);
             }
         } else {
             throw new TokenValidationException("No userInfo endpoint configured");
+        }
+    }
+
+    private String getErrorBody(HttpURLConnection urlConnection) {
+        String contentEncoding = urlConnection.getContentEncoding();
+        if (Strings.isNullOrEmpty(contentEncoding)) {
+            contentEncoding = "UTF-8";
+        }
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(urlConnection.getErrorStream(), contentEncoding))) {
+            StringBuilder response = new StringBuilder();
+            String inputLine;
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+            return response.toString();
+        } catch (IOException e) {
+            return "could not read body: " + e.getMessage();
         }
     }
 }
