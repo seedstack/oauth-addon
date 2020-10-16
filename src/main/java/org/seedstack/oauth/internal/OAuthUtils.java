@@ -7,8 +7,6 @@
  */
 package org.seedstack.oauth.internal;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.google.common.base.Strings;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationGrant;
@@ -26,6 +24,11 @@ import com.nimbusds.openid.connect.sdk.Nonce;
 import com.nimbusds.openid.connect.sdk.OIDCScopeValue;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
 import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
+import org.seedstack.oauth.OAuthConfig;
+import org.seedstack.oauth.spi.OAuthProvider;
+import org.seedstack.seed.SeedException;
+import org.seedstack.shed.exception.BaseException;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -35,10 +38,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.seedstack.oauth.OAuthConfig;
-import org.seedstack.oauth.spi.OAuthProvider;
-import org.seedstack.seed.SeedException;
-import org.seedstack.shed.exception.BaseException;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 final class OAuthUtils {
     private OAuthUtils() {
@@ -86,10 +87,13 @@ final class OAuthUtils {
     }
 
     static OAuthAuthenticationTokenImpl requestTokens(OAuthProvider oauthProvider, OAuthConfig oauthConfig,
-            AuthorizationGrant authorizationGrant, Nonce nonce, List<String> scopes) {
+                                                      AuthorizationGrant authorizationGrant, Nonce nonce, List<String> scopes) {
         URI endpointURI = oauthProvider.getTokenEndpoint();
         Map<String, List<String>> parameters = OAuthUtils.extractQueryParameters(endpointURI);
         endpointURI = OAuthUtils.stripQueryString(endpointURI);
+
+        // Add custom parameters to the request
+        oauthConfig.getCustomParameters().forEach(parameters::put);
 
         TokenRequest tokenRequest = new TokenRequest(
                 checkNotNull(endpointURI, "Missing token endpoint"),

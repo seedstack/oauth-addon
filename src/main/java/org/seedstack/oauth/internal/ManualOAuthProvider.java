@@ -7,15 +7,16 @@
  */
 package org.seedstack.oauth.internal;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.net.URI;
-import java.util.Optional;
-import javax.inject.Inject;
-import javax.inject.Provider;
 import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.spi.OAuthProvider;
 import org.seedstack.seed.Application;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import java.net.URI;
+import java.util.Optional;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 class ManualOAuthProvider implements Provider<OAuthProvider> {
     @Inject
@@ -51,28 +52,28 @@ class ManualOAuthProvider implements Provider<OAuthProvider> {
 
         @Override
         public boolean isOpenIdCapable() {
-            return oauthConfig.openIdConnect().isEnabled();
+            return oauthConfig.provider().getOpenIdConnect().isAllowed();
         }
 
         @Override
         public Optional<URI> getIssuer() {
-            return Optional.ofNullable(oauthConfig.openIdConnect().getIssuer());
+            return Optional.ofNullable(oauthConfig.provider().getIssuer());
         }
 
         @Override
         public Optional<URI> getUserInfoEndpoint() {
-            return Optional.ofNullable(oauthConfig.openIdConnect().getUserInfo());
+            return Optional.ofNullable(oauthConfig.provider().getUserInfo());
         }
 
         @Override
         public Optional<URI> getJwksEndpoint() {
-            return Optional.ofNullable(oauthConfig.openIdConnect().getJwks());
+            return Optional.ofNullable(oauthConfig.provider().getJwks());
         }
 
         @Override
-        public String getSigningAlgorithm() {
-            return checkNotNull(oauthConfig.openIdConnect().getSigningAlgorithm(),
-                    "Token signing algorithm should not be null");
+        public String getIdSigningAlgorithm() {
+            return checkNotNull(oauthConfig.algorithms().getIdSigningAlgorithm(),
+                    "Id token signing algorithm should not be null");
         }
     }
 }

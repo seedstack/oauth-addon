@@ -90,7 +90,7 @@ public class MockedManualOAuthProvider implements OAuthProvider {
     }
 
     @Override
-    public String getSigningAlgorithm() {
+    public String getIdSigningAlgorithm() {
         return "";
     }
 

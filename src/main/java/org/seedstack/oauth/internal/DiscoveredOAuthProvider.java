@@ -7,18 +7,19 @@
  */
 package org.seedstack.oauth.internal;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.nimbusds.openid.connect.sdk.OIDCScopeValue;
-import java.net.URI;
-import java.util.List;
-import java.util.Optional;
-import javax.inject.Inject;
-import javax.inject.Provider;
 import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.spi.OAuthProvider;
 import org.seedstack.seed.Application;
 import org.seedstack.seed.SeedException;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import java.net.URI;
+import java.util.List;
+import java.util.Optional;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 class DiscoveredOAuthProvider implements Provider<OAuthProvider> {
     private final OidcDiscoveryDocument oidcDiscoveryDocument;
@@ -35,14 +36,21 @@ class DiscoveredOAuthProvider implements Provider<OAuthProvider> {
         return new OAuthProvider() {
             @Override
             public boolean isOpenIdCapable() {
-                List<String> scopesSupported = oidcDiscoveryDocument.getScopesSupported();
-                if (scopesSupported == null) {
-                    // Base decision on configuration only as provider doesn't advertise its OpenID Connect capability
-                    return oauthConfig.openIdConnect().isEnabled();
+                OAuthConfig.ProviderConfig.OIDCState openIdConnect = oauthConfig.provider().getOpenIdConnect();
+                if (openIdConnect == OAuthConfig.ProviderConfig.OIDCState.DISABLED) {
+                    return false;
+                } else if (openIdConnect == OAuthConfig.ProviderConfig.OIDCState.REQUIRED) {
+                    return true;
                 } else {
-                    // Check if the server declares to support an openid scope
-                    return oauthConfig.openIdConnect().isEnabled()
-                            && scopesSupported.contains(OIDCScopeValue.OPENID.getValue());
+                    List<String> scopesSupported = oidcDiscoveryDocument.getScopesSupported();
+                    if (scopesSupported == null) {
+                        // Base decision on configuration only as provider doesn't advertise its OpenID Connect capability
+                        return oauthConfig.provider().getOpenIdConnect().isAllowed();
+                    } else {
+                        // Check if the server declares to support an openid scope
+                        return oauthConfig.provider().getOpenIdConnect().isAllowed()
+                                && scopesSupported.contains(OIDCScopeValue.OPENID.getValue());
+                    }
                 }
             }
 
@@ -50,7 +58,7 @@ class DiscoveredOAuthProvider implements Provider<OAuthProvider> {
             public Optional<URI> getIssuer() {
                 return Optional.ofNullable(
                         or(
-                                oauthConfig.openIdConnect().getIssuer(),
+                                oauthConfig.provider().getIssuer(),
                                 oidcDiscoveryDocument.getIssuer()
                         )
                 );
@@ -82,7 +90,7 @@ class DiscoveredOAuthProvider implements Provider<OAuthProvider> {
             public Optional<URI> getUserInfoEndpoint() {
                 return Optional.ofNullable(
                         or(
-                                oauthConfig.openIdConnect().getUserInfo(),
+                                oauthConfig.provider().getUserInfo(),
                                 oidcDiscoveryDocument.getUserinfoEndpoint()
                         )
                 );
@@ -102,16 +110,16 @@ class DiscoveredOAuthProvider implements Provider<OAuthProvider> {
             public Optional<URI> getJwksEndpoint() {
                 return Optional.ofNullable(
                         or(
-                                oauthConfig.openIdConnect().getJwks(),
+                                oauthConfig.provider().getJwks(),
                                 oidcDiscoveryDocument.getJwksUri()
                         )
                 );
             }
 
             @Override
-            public String getSigningAlgorithm() {
+            public String getIdSigningAlgorithm() {
                 List<String> supportedAlgorithms = oidcDiscoveryDocument.getIdTokenSigningAlgValuesSupported();
-                String signingAlgorithm = checkNotNull(oauthConfig.openIdConnect().getSigningAlgorithm(),
+                String signingAlgorithm = checkNotNull(oauthConfig.algorithms().getIdSigningAlgorithm(),
                         "Expected algorithm not configured");
                 if (!supportedAlgorithms.contains(signingAlgorithm)) {
                     throw SeedException.createNew(OAuthErrorCode.SIGNING_ALGORITHM_NOT_SUPPORTED_BY_PROVIDER)

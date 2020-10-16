@@ -7,10 +7,6 @@
  */
 package org.seedstack.oauth.internal;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.apache.shiro.web.util.WebUtils.issueRedirect;
-import static org.seedstack.oauth.internal.OAuthUtils.createScope;
-
 import com.nimbusds.oauth2.sdk.AuthorizationRequest;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.ResponseType;
@@ -20,15 +16,6 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
 import com.nimbusds.openid.connect.sdk.Nonce;
-import java.io.IOException;
-import java.net.URI;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import javax.inject.Inject;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -44,6 +31,21 @@ import org.seedstack.seed.web.SecurityFilter;
 import org.seedstack.seed.web.security.SessionRegeneratingFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.shiro.web.util.WebUtils.issueRedirect;
+import static org.seedstack.oauth.internal.OAuthUtils.createScope;
 
 @SecurityFilter("oauth")
 public class OAuthAuthenticationFilter extends AuthenticatingFilter implements SessionRegeneratingFilter {
@@ -83,16 +85,45 @@ public class OAuthAuthenticationFilter extends AuthenticatingFilter implements S
             loggedIn = executeLogin(request, response);
         }
         if (!loggedIn) {
-            redirectToAuthorizationEndpoint(request, response);
+            if (oauthConfig.getRedirect() != null) {
+                redirectToAuthorizationEndpoint(request, response);
+            } else {
+                try {
+                    ((HttpServletResponse) response).sendError(
+                            HttpServletResponse.SC_UNAUTHORIZED,
+                            "Unauthorized: missing or invalid access token"
+                    );
+                } catch (IOException e1) {
+                    LOGGER.debug("Unable to send {} HTTP code to client", HttpServletResponse.SC_UNAUTHORIZED, e1);
+                }
+            }
         }
         return loggedIn;
     }
 
     @Override
     protected boolean onLoginSuccess(AuthenticationToken token, Subject subject, ServletRequest request,
-            ServletResponse response) throws Exception {
+                                     ServletResponse response) {
         regenerateSession(subject);
-        return super.onLoginSuccess(token, subject, request, response);
+        return true;
+    }
+
+    @Override
+    protected boolean onLoginFailure(AuthenticationToken token, AuthenticationException e, ServletRequest request,
+                                     ServletResponse response) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Authentication exception", e);
+        }
+
+        try {
+            ((HttpServletResponse) response).sendError(
+                    HttpServletResponse.SC_FORBIDDEN,
+                    "Forbidden: " + e.getMessage()
+            );
+        } catch (IOException e1) {
+            LOGGER.debug("Unable to send {} HTTP code to client", HttpServletResponse.SC_FORBIDDEN, e1);
+        }
+        return false;
     }
 
     private void redirectToAuthorizationEndpoint(ServletRequest request, ServletResponse response) throws IOException {

@@ -9,6 +9,9 @@ package org.seedstack.oauth.spi;
 
 import org.seedstack.seed.security.AuthenticationException;
 
+/**
+ * This exception is thrown when a token validation error occurs.
+ */
 public class TokenValidationException extends AuthenticationException {
     public TokenValidationException() {
         super();

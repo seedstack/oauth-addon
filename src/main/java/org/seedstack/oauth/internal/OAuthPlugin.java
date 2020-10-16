@@ -10,13 +10,14 @@ package org.seedstack.oauth.internal;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.nuun.kernel.api.plugin.InitState;
 import io.nuun.kernel.api.plugin.context.InitContext;
-import java.io.IOException;
-import java.net.URI;
 import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.seed.SeedException;
 import org.seedstack.seed.core.internal.AbstractSeedPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.URI;
 
 public class OAuthPlugin extends AbstractSeedPlugin {
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuthPlugin.class);
@@ -37,8 +38,8 @@ public class OAuthPlugin extends AbstractSeedPlugin {
             LOGGER.info("Discovered OpenIdConnect provider " + discoveryDocument.getIssuer());
             configured = true;
         } else if (oauthConfig.provider().getAuthorization() != null && oauthConfig.provider().getToken() != null) {
-            if (oauthConfig.openIdConnect().getIssuer() != null) {
-                LOGGER.info("Configured OpenIdConnect provider " + oauthConfig.openIdConnect().getIssuer());
+            if (oauthConfig.provider().getIssuer() != null) {
+                LOGGER.info("Configured OpenIdConnect provider " + oauthConfig.provider().getIssuer());
             } else {
                 LOGGER.info("Configured OAuth provider");
             }

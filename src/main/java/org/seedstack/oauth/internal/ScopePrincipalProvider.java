@@ -8,14 +8,15 @@
 package org.seedstack.oauth.internal;
 
 import com.nimbusds.oauth2.sdk.Scope;
-import java.io.Serializable;
 import org.seedstack.seed.security.principals.PrincipalProvider;
 
-public class ScopePrincipalProvider implements PrincipalProvider<Scope>, Serializable {
+import java.io.Serializable;
+
+class ScopePrincipalProvider implements PrincipalProvider<Scope>, Serializable {
     private static final long serialVersionUID = 1L;
     private final Scope scope;
 
-    public ScopePrincipalProvider(Scope scope) {
+    ScopePrincipalProvider(Scope scope) {
         this.scope = scope;
     }
 

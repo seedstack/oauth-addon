@@ -11,7 +11,7 @@ import java.net.URI;
 import java.util.Optional;
 
 /**
- * This injectable inter
+ * This interface is used to query details about the configured OAuth provider.
  */
 public interface OAuthProvider {
     URI getAuthorizationEndpoint();
@@ -28,5 +28,5 @@ public interface OAuthProvider {
 
     Optional<URI> getJwksEndpoint();
 
-    String getSigningAlgorithm();
+    String getIdSigningAlgorithm();
 }

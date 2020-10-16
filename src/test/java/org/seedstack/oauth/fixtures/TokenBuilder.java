@@ -7,8 +7,6 @@
  */
 package org.seedstack.oauth.fixtures;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -23,19 +21,20 @@ import com.nimbusds.jwt.PlainJWT;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
+import org.seedstack.oauth.OAuthConfig;
+import org.seedstack.oauth.fixtures.provider.TokenData;
+import org.seedstack.seed.SeedException;
+
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
-import org.seedstack.oauth.OAuthConfig;
-import org.seedstack.oauth.fixtures.TokenErrorCode;
-import org.seedstack.oauth.fixtures.provider.TokenData;
-import org.seedstack.seed.SeedException;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class TokenBuilder {
     private static final String ACCESS_TOKEN_VALUE =
-            "ya29.Gl0OBRawZls_r7atLBziIl051NW1xWZTp96JbPyuz8g09Ty0QvavJaQzBMtpclRxDxgq2b3pdQbUFCDaRq" +
-                    "-qIJ7Qsw_KQmYMhxxczJsXP7DqMkiQf7CvOsZhwQkqpfE";
+            "ya29.Gl0OBRawZls_r7atLBziIl051NW1xWZTp96JbPyuz8g09Ty0QvavJaQzBMtpclRxDxgq2b3pdQbUFCDaRq-qIJ7Qsw_KQmYMhxxczJsXP7DqMkiQf7CvOsZhwQkqpfE";
     private static final String TOKEN_TYPE = "Bearer";
     private static final int TOKEN_EXPIRES_IN = 3563;
     private static final String RSA_KEY_ID = "5ef69cb85daeef24c4791e20553af176fd216e68";
@@ -57,7 +56,7 @@ public class TokenBuilder {
         td.setToken_type(TOKEN_TYPE);
         td.setScope(scopes.toString());
         if (!buildOnlyAccessToken) {
-            if (oauthConfig.openIdConnect().isUnsecuredTokenAllowed()) {
+            if (oauthConfig.algorithms().isPlainTokenAllowed()) {
                 td.setId_token(buildPlainJWT(nonce));
             } else {
                 td.setId_token(buildSignedJWT(nonce));
@@ -87,7 +86,7 @@ public class TokenBuilder {
     private String buildSignedJWT(String nonce) {
         SignedJWT signedJWT;
         try {
-            JWKSet jwkSet = JWKSet.load(checkNotNull(oauthConfig.openIdConnect()
+            JWKSet jwkSet = JWKSet.load(checkNotNull(oauthConfig.provider()
                     .getJwks().toURL(), "Unable to load JWK set"));
             JWK key = jwkSet.getKeyByKeyId(RSA_KEY_ID);
 

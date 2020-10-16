@@ -7,33 +7,42 @@
  */
 package org.seedstack.oauth;
 
+import com.google.common.collect.Sets;
 import org.seedstack.coffig.Config;
-import org.seedstack.coffig.SingleValue;
 import org.seedstack.oauth.spi.AccessTokenValidator;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Config("security.oauth")
 public class OAuthConfig {
-    private OpenIdConnectConfig openIdConnect = new OpenIdConnectConfig();
     private ProviderConfig provider = new ProviderConfig();
+    private AlgorithmConfig algorithms = new AlgorithmConfig();
     private URI discoveryDocument;
     private URI redirect;
     private String clientId;
     private String clientSecret;
     private List<String> scopes = new ArrayList<>();
-    private String signingAlgorithm = "RS256";
-    private Class<? extends AccessTokenValidator> accessTokenValidator;
-
-    public OpenIdConnectConfig openIdConnect() {
-        return openIdConnect;
-    }
+    private Set<String> requiredClaims = Sets.newHashSet("sub");
+    private Set<String> prohibitedClaims = new HashSet<>();
+    private Set<String> allowedAudiences = new HashSet<>();
+    private Map<String, List<String>> customParameters = new HashMap<>();
+    private Class<? extends AccessTokenValidator> accessTokenValidator = UserInfoAccessTokenValidator.class;
+    private boolean autoFetchUserInfo = false;
+    private boolean treatScopesAsPermissions = false;
 
     public ProviderConfig provider() {
         return provider;
+    }
+
+    public AlgorithmConfig algorithms() {
+        return algorithms;
     }
 
     public URI getDiscoveryDocument() {
@@ -58,16 +67,18 @@ public class OAuthConfig {
         return clientId;
     }
 
-    public void setClientId(String clientId) {
+    public OAuthConfig setClientId(String clientId) {
         this.clientId = clientId;
+        return this;
     }
 
     public String getClientSecret() {
         return clientSecret;
     }
 
-    public void setClientSecret(String clientSecret) {
+    public OAuthConfig setClientSecret(String clientSecret) {
         this.clientSecret = clientSecret;
+        return this;
     }
 
     public List<String> getScopes() {
@@ -78,12 +89,47 @@ public class OAuthConfig {
         this.scopes.add(scope);
     }
 
-    public String getSigningAlgorithm() {
-        return signingAlgorithm;
+    public Set<String> getRequiredClaims() {
+        return Collections.unmodifiableSet(requiredClaims);
     }
 
-    public OAuthConfig setSigningAlgorithm(String signingAlgorithm) {
-        this.signingAlgorithm = signingAlgorithm;
+    public OAuthConfig setRequiredClaims(Set<String> requiredClaims) {
+        this.requiredClaims = new HashSet<>(requiredClaims);
+        return this;
+    }
+
+    public Set<String> getProhibitedClaims() {
+        return Collections.unmodifiableSet(prohibitedClaims);
+    }
+
+    public OAuthConfig setProhibitedClaims(Set<String> prohibitedClaims) {
+        this.prohibitedClaims = new HashSet<>(prohibitedClaims);
+        return this;
+    }
+
+    public Set<String> getAllowedAudiences() {
+        return Collections.unmodifiableSet(allowedAudiences);
+    }
+
+    public OAuthConfig setAllowedAudiences(Set<String> allowedAudiences) {
+        this.allowedAudiences = new HashSet<>(allowedAudiences);
+        return this;
+    }
+
+    public Map<String, List<String>> getCustomParameters() {
+        Map<String, List<String>> result = new HashMap<>();
+        customParameters.forEach((k, v) -> result.put(k, Collections.unmodifiableList(v)));
+        return result;
+    }
+
+    public OAuthConfig setCustomParameters(Map<String, List<String>> customParameters) {
+        this.customParameters = new HashMap<>();
+        customParameters.forEach((k, v) -> this.customParameters.put(k, new ArrayList<>(v)));
+        return this;
+    }
+
+    public OAuthConfig addCustomParameter(String name, String value) {
+        this.customParameters.computeIfAbsent(name, v -> new ArrayList<>()).add(value);
         return this;
     }
 
@@ -96,96 +142,42 @@ public class OAuthConfig {
         return this;
     }
 
-    @Config("openIdConnect")
-    public static class OpenIdConnectConfig {
-        @SingleValue
-        private boolean enabled = true;
-        private URI issuer;
-        private URI jwks;
-        private String signingAlgorithm = "RS256";
-        private URI userInfo;
-        private List<String> audiences = new ArrayList<>();
-        private boolean unsecuredTokenAllowed;
-        private boolean alwaysValidateHash;
+    public boolean isAutoFetchUserInfo() {
+        return autoFetchUserInfo;
+    }
 
-        public boolean isEnabled() {
-            return enabled;
-        }
+    public OAuthConfig setAutoFetchUserInfo(boolean autoFetchUserInfo) {
+        this.autoFetchUserInfo = autoFetchUserInfo;
+        return this;
+    }
 
-        public OpenIdConnectConfig setEnabled(boolean enabled) {
-            this.enabled = enabled;
-            return this;
-        }
+    public boolean isTreatScopesAsPermissions() {
+        return treatScopesAsPermissions;
+    }
 
-        public URI getIssuer() {
-            return issuer;
-        }
-
-        public OpenIdConnectConfig setIssuer(URI issuer) {
-            this.issuer = issuer;
-            return this;
-        }
-
-        public URI getJwks() {
-            return jwks;
-        }
-
-        public OpenIdConnectConfig setJwks(URI jwks) {
-            this.jwks = jwks;
-            return this;
-        }
-
-        public String getSigningAlgorithm() {
-            return signingAlgorithm;
-        }
-
-        public OpenIdConnectConfig setSigningAlgorithm(String signingAlgorithm) {
-            this.signingAlgorithm = signingAlgorithm;
-            return this;
-        }
-
-        public URI getUserInfo() {
-            return userInfo;
-        }
-
-        public OpenIdConnectConfig setUserInfo(URI userInfo) {
-            this.userInfo = userInfo;
-            return this;
-        }
-
-        public List<String> getAudiences() {
-            return Collections.unmodifiableList(audiences);
-        }
-
-        public OpenIdConnectConfig setAudiences(List<String> audiences) {
-            this.audiences = new ArrayList<>(audiences);
-            return this;
-        }
-
-        public boolean isUnsecuredTokenAllowed() {
-            return unsecuredTokenAllowed;
-        }
-
-        public OpenIdConnectConfig setUnsecuredTokenAllowed(boolean unsecuredTokenAllowed) {
-            this.unsecuredTokenAllowed = unsecuredTokenAllowed;
-            return this;
-        }
-
-        public boolean isAlwaysValidateHash() {
-            return alwaysValidateHash;
-        }
-
-        public OpenIdConnectConfig setAlwaysValidateHash(boolean alwaysValidateHash) {
-            this.alwaysValidateHash = alwaysValidateHash;
-            return this;
-        }
+    public OAuthConfig setTreatScopesAsPermissions(boolean treatScopesAsPermissions) {
+        this.treatScopesAsPermissions = treatScopesAsPermissions;
+        return this;
     }
 
     @Config("provider")
     public static class ProviderConfig {
+        private OIDCState openIdConnect = OIDCState.AUTO;
         private URI authorization;
         private URI token;
         private URI revocation;
+        private URI issuer;
+        private URI jwks;
+        private URI userInfo;
+
+        public OIDCState getOpenIdConnect() {
+            return openIdConnect;
+        }
+
+        public ProviderConfig setOpenIdConnect(OIDCState openIdConnect) {
+            this.openIdConnect = openIdConnect;
+            return this;
+        }
 
         public URI getAuthorization() {
             return authorization;
@@ -211,6 +203,76 @@ public class OAuthConfig {
 
         public void setRevocation(URI revocation) {
             this.revocation = revocation;
+        }
+
+        public URI getIssuer() {
+            return issuer;
+        }
+
+        public ProviderConfig setIssuer(URI issuer) {
+            this.issuer = issuer;
+            return this;
+        }
+
+        public URI getJwks() {
+            return jwks;
+        }
+
+        public ProviderConfig setJwks(URI jwks) {
+            this.jwks = jwks;
+            return this;
+        }
+
+        public URI getUserInfo() {
+            return userInfo;
+        }
+
+        public ProviderConfig setUserInfo(URI userInfo) {
+            this.userInfo = userInfo;
+            return this;
+        }
+
+        public enum OIDCState {
+            DISABLED,
+            REQUIRED,
+            AUTO;
+
+            public boolean isAllowed() {
+                return this == REQUIRED || this == AUTO;
+            }
+        }
+    }
+
+    public static class AlgorithmConfig {
+        private String accessSigningAlgorithm = "RS256";
+        private String idSigningAlgorithm = "RS256";
+        private boolean plainTokenAllowed = false;
+
+        public String getAccessSigningAlgorithm() {
+            return accessSigningAlgorithm;
+        }
+
+        public AlgorithmConfig setAccessSigningAlgorithm(String accessSigningAlgorithm) {
+            this.accessSigningAlgorithm = accessSigningAlgorithm;
+            return this;
+        }
+
+        public String getIdSigningAlgorithm() {
+            return idSigningAlgorithm;
+        }
+
+        public AlgorithmConfig setIdSigningAlgorithm(String idSigningAlgorithm) {
+            this.idSigningAlgorithm = idSigningAlgorithm;
+            return this;
+        }
+
+        public boolean isPlainTokenAllowed() {
+            return plainTokenAllowed;
+        }
+
+        public AlgorithmConfig setPlainTokenAllowed(boolean plainTokenAllowed) {
+            this.plainTokenAllowed = plainTokenAllowed;
+            return this;
         }
     }
 }

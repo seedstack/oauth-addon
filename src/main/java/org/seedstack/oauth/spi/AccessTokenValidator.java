@@ -13,7 +13,7 @@ package org.seedstack.oauth.spi;
  */
 public interface AccessTokenValidator {
     /**
-     * This method is called by the security subsystem to validate a non OpenId Connect access token.
+     * This method is called by the security subsystem to validate an opaque access token.
      *
      * @param accessToken the string representation of the token.
      * @throws TokenValidationException if the token is invalid.

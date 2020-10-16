@@ -7,9 +7,6 @@
  */
 package org.seedstack.oauth.internal;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertNotNull;
-
 import com.nimbusds.jose.PlainHeader;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -17,23 +14,27 @@ import com.nimbusds.jwt.PlainJWT;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.openid.connect.sdk.Nonce;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Date;
-import java.util.Optional;
-import javax.inject.Provider;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.powermock.reflect.Whitebox;
+import org.seedstack.oauth.OAuthConfig;
+import org.seedstack.oauth.fixtures.MockedManualOAuthProvider;
+import org.seedstack.oauth.fixtures.TestAccessTokenValidator;
 import org.seedstack.oauth.spi.AccessTokenValidator;
 import org.seedstack.oauth.spi.OAuthAuthenticationToken;
-import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.spi.OAuthProvider;
 import org.seedstack.oauth.spi.OAuthService;
 import org.seedstack.oauth.spi.TokenValidationException;
-import org.seedstack.oauth.fixtures.MockedManualOAuthProvider;
-import org.seedstack.oauth.fixtures.TestAccessTokenValidator;
+
+import javax.inject.Provider;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Date;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertNotNull;
 
 public class OAuthServiceTest {
     private OAuthService underTest;
@@ -53,7 +54,7 @@ public class OAuthServiceTest {
 
     @Test
     public void authenticationInfoReturnedShouldBeNonNull() {
-        assertThat(underTest.validate(mockedToken())).get().isEqualTo("118090614001964330293");
+        assertThat(underTest.validate(mockedToken()).getSubjectId()).isEqualTo("118090614001964330293");
     }
 
     @Test(expected = NullPointerException.class)
@@ -108,13 +109,11 @@ public class OAuthServiceTest {
 
     //Mock OAuthConfig
     private void mockOAuthConfig() {
-        this.oauthConfig = Mockito.mock(OAuthConfig.class);
-        OAuthConfig.OpenIdConnectConfig openIdConnectConfig = Mockito.mock(OAuthConfig.OpenIdConnectConfig.class);
+        this.oauthConfig = new OAuthConfig();
+        this.oauthConfig.setClientId("testClientId");
+        this.oauthConfig.algorithms().setPlainTokenAllowed(true);
+        this.oauthProvider = new MockedManualOAuthProvider();
         Whitebox.setInternalState(underTest, "oauthConfig", this.oauthConfig);
-        Mockito.when(oauthConfig.getClientId())
-                .thenReturn("testClientId");
-        Mockito.when(this.oauthConfig.openIdConnect()).thenReturn(openIdConnectConfig);
-        Mockito.when(this.oauthConfig.openIdConnect().isUnsecuredTokenAllowed()).thenReturn(true);
     }
 
     //Mock OAuthProvider

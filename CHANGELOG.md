@@ -1,3 +1,13 @@
+# Version 1.2.0 (2020-11-30)
+
+* [brk] Simplified and new configuration options.
+* [new] A default opaque token validator is now provided (validating the access token by calling the userInfo endpoint if available). 
+* [new] Improved token validation (at_hash optional, try validating access token as JWT first, then as an opaque token if it fails).
+* [new] Allow treating scopes either as roles (which can give permissions) or as direct permissions.
+* [new] Extract claims from ID token if available and enrich them with the userInfo endpoint if enabled (off by default).
+* [new] Proper support for bearer access tokens.
+* [chg] Improved client error messages.
+
 # Version 1.1.3 (2020-10-05)
 
 * [fix] Avoid throwing an exception when no scope is returned by the identity provider.

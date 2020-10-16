@@ -7,18 +7,13 @@
  */
 package org.seedstack.oauth.internal;
 
-import com.nimbusds.oauth2.sdk.ErrorResponse;
-import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.Scope;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
-import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
-import com.nimbusds.openid.connect.sdk.UserInfoRequest;
-import com.nimbusds.openid.connect.sdk.UserInfoResponse;
-import com.nimbusds.openid.connect.sdk.UserInfoSuccessResponse;
-import com.nimbusds.openid.connect.sdk.claims.UserInfo;
+import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.spi.OAuthAuthenticationToken;
-import org.seedstack.oauth.spi.OAuthProvider;
 import org.seedstack.oauth.spi.OAuthService;
+import org.seedstack.oauth.spi.TokenValidationResult;
+import org.seedstack.seed.Configuration;
 import org.seedstack.seed.security.AuthenticationException;
 import org.seedstack.seed.security.AuthenticationInfo;
 import org.seedstack.seed.security.AuthenticationToken;
@@ -33,8 +28,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.io.IOException;
-import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
@@ -42,6 +35,8 @@ import java.util.Set;
 
 public class OAuthRealm implements Realm {
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuthRealm.class);
+    @Configuration
+    private OAuthConfig oAuthConfig;
     @Inject
     private OAuthService oauthService;
     @Inject
@@ -52,16 +47,22 @@ public class OAuthRealm implements Realm {
     private RolePermissionResolver rolePermissionResolver;
 
     @Override
+    public Set<String> getRealmPermissions(PrincipalProvider<?> identityPrincipal, Collection<PrincipalProvider<?>> otherPrincipals) {
+        if (oAuthConfig.isTreatScopesAsPermissions()) {
+            return scopesToStringList(otherPrincipals);
+        } else {
+            return new HashSet<>();
+        }
+    }
+
+    @Override
     public Set<String> getRealmRoles(PrincipalProvider<?> identityPrincipal,
                                      Collection<PrincipalProvider<?>> otherPrincipals) {
-        Set<String> roles = new HashSet<>();
-        for (PrincipalProvider<?> principalProvider : otherPrincipals) {
-            Object principal = principalProvider.get();
-            if (principal instanceof Scope) {
-                roles.addAll(((Scope) principal).toStringList());
-            }
+        if (oAuthConfig.isTreatScopesAsPermissions()) {
+            return new HashSet<>();
+        } else {
+            return scopesToStringList(otherPrincipals);
         }
-        return roles;
     }
 
     @Override
@@ -71,45 +72,21 @@ public class OAuthRealm implements Realm {
             AccessToken accessToken = (AccessToken) authenticationToken.getCredentials();
 
             // Validate token to build basic authentication info
-            AuthenticationInfo authenticationInfo =
-                    oauthService.validate(((OAuthAuthenticationToken) authenticationToken))
-                            .map(subjectId -> new AuthenticationInfo(subjectId, accessToken))
-                            .orElse(new AuthenticationInfo("", accessToken));
+            TokenValidationResult result = oauthService.validate(((OAuthAuthenticationToken) authenticationToken));
+            AuthenticationInfo authenticationInfo = new AuthenticationInfo(result.getSubjectId(), accessToken);
 
+            // Put all claims as other principals
             Collection<PrincipalProvider<?>> otherPrincipals = authenticationInfo.getOtherPrincipals();
+            result.getClaims().forEach((name, value) -> otherPrincipals.add(new SimplePrincipalProvider(name, value)));
 
-            // User info-based principals
-            fetchUserInfo(accessToken).ifPresent(userInfo -> {
-                // Standard SeedStack principals if present (SDK and realm neutral)
-                Optional.ofNullable(userInfo.getGivenName())
-                        .map(Principals::firstNamePrincipal)
-                        .ifPresent(otherPrincipals::add);
-                Optional.ofNullable(userInfo.getFamilyName())
-                        .map(Principals::lastNamePrincipal)
-                        .ifPresent(otherPrincipals::add);
-                Optional.ofNullable(userInfo.getName())
-                        .map(Principals::fullNamePrincipal)
-                        .ifPresent(otherPrincipals::add);
-                Optional.ofNullable(userInfo.getLocale())
-                        .map(Principals::localePrincipal)
-                        .ifPresent(otherPrincipals::add);
-
-                // Standard claims as principals under their own name (SDK neutral)
-                for (String claimName : UserInfo.getStandardClaimNames()) {
-                    Optional.ofNullable(userInfo.getStringClaim(claimName))
-                            .map(claimValue -> new SimplePrincipalProvider(claimName, claimValue))
-                            .ifPresent(otherPrincipals::add);
-                }
-
-                // User info object as principal (SDK specific)
-                otherPrincipals.add(new UserInfoPrincipalProvider(userInfo));
-            });
+            // User info-based principals if automatic fetching is configured
+            if (oAuthConfig.isAutoFetchUserInfo()) {
+                oauthService.fetchUserInfo(((OAuthAuthenticationToken) authenticationToken))
+                        .forEach((name, value) -> otherPrincipals.add(new SimplePrincipalProvider(name, value)));
+            }
 
             // Scope as principal (SDK specific)
-            Scope scope = accessToken.getScope();
-            if (scope != null) {
-                otherPrincipals.add(new ScopePrincipalProvider(scope));
-            }
+            otherPrincipals.add(new ScopePrincipalProvider(new Scope(result.getScopes().toArray(new String[0]))));
 
             return authenticationInfo;
         } else {
@@ -132,32 +109,11 @@ public class OAuthRealm implements Realm {
         return OAuthAuthenticationTokenImpl.class;
     }
 
-    private Optional<UserInfo> fetchUserInfo(AccessToken accessToken) {
-        OAuthProvider oAuthProvider = oauthService.getOAuthProvider();
-        if (accessToken instanceof BearerAccessToken && oAuthProvider.isOpenIdCapable()) {
-            Optional<URI> userInfoEndpoint = oAuthProvider.getUserInfoEndpoint();
-            if (userInfoEndpoint.isPresent()) {
-                UserInfoResponse userInfoResponse;
-                URI endpointURI = userInfoEndpoint.get();
-
-                try {
-                    userInfoResponse = UserInfoResponse
-                            .parse(new UserInfoRequest(endpointURI, ((BearerAccessToken) accessToken))
-                                    .toHTTPRequest().send());
-                } catch (IOException | ParseException e) {
-                    LOGGER.error("Unable to fetch user info from {}", endpointURI, e);
-                    return Optional.empty();
-                }
-                if (userInfoResponse.indicatesSuccess()) {
-                    return Optional.of(((UserInfoSuccessResponse) userInfoResponse).getUserInfo());
-                } else {
-                    LOGGER.error("The provider returned an error while fetching user info from {}",
-                            endpointURI,
-                            OAuthUtils.buildGenericError(((ErrorResponse) userInfoResponse)));
-                    return Optional.empty();
-                }
-            }
-        }
-        return Optional.empty();
+    private HashSet<String> scopesToStringList(Collection<PrincipalProvider<?>> otherPrincipals) {
+        return Optional.ofNullable(Principals.getOnePrincipalByType(otherPrincipals, Scope.class))
+                .map(PrincipalProvider::get)
+                .map(Scope::toStringList)
+                .map(HashSet::new)
+                .orElse(new HashSet<>());
     }
 }
