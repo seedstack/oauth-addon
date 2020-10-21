@@ -7,7 +7,6 @@
  */
 package org.seedstack.oauth.internal;
 
-import com.nimbusds.openid.connect.sdk.OIDCScopeValue;
 import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.spi.OAuthProvider;
 import org.seedstack.seed.Application;
@@ -34,26 +33,6 @@ class DiscoveredOAuthProvider implements Provider<OAuthProvider> {
     public OAuthProvider get() {
         OAuthConfig oauthConfig = application.getConfiguration().get(OAuthConfig.class);
         return new OAuthProvider() {
-            @Override
-            public boolean isOpenIdCapable() {
-                OAuthConfig.ProviderConfig.OIDCState openIdConnect = oauthConfig.provider().getOpenIdConnect();
-                if (openIdConnect == OAuthConfig.ProviderConfig.OIDCState.DISABLED) {
-                    return false;
-                } else if (openIdConnect == OAuthConfig.ProviderConfig.OIDCState.REQUIRED) {
-                    return true;
-                } else {
-                    List<String> scopesSupported = oidcDiscoveryDocument.getScopesSupported();
-                    if (scopesSupported == null) {
-                        // Base decision on configuration only as provider doesn't advertise its OpenID Connect capability
-                        return oauthConfig.provider().getOpenIdConnect().isAllowed();
-                    } else {
-                        // Check if the server declares to support an openid scope
-                        return oauthConfig.provider().getOpenIdConnect().isAllowed()
-                                && scopesSupported.contains(OIDCScopeValue.OPENID.getValue());
-                    }
-                }
-            }
-
             @Override
             public Optional<URI> getIssuer() {
                 return Optional.ofNullable(

@@ -19,6 +19,7 @@ import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.EncryptedJWT;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.JWTParser;
 import com.nimbusds.jwt.PlainJWT;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
@@ -40,7 +41,9 @@ import com.nimbusds.openid.connect.sdk.UserInfoRequest;
 import com.nimbusds.openid.connect.sdk.UserInfoResponse;
 import com.nimbusds.openid.connect.sdk.UserInfoSuccessResponse;
 import com.nimbusds.openid.connect.sdk.claims.AccessTokenHash;
+import com.nimbusds.openid.connect.sdk.claims.ClaimsSet;
 import com.nimbusds.openid.connect.sdk.claims.IDTokenClaimsSet;
+import com.nimbusds.openid.connect.sdk.claims.PersonClaims;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenClaimsVerifier;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
@@ -70,10 +73,12 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.seedstack.oauth.internal.OAuthUtils.createScope;
 import static org.seedstack.oauth.internal.OAuthUtils.requestTokens;
 
 public class OAuthServiceImpl implements OAuthService {
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuthServiceImpl.class);
+    private static final String SUBJECT_CLAIM = "sub";
     @Configuration
     private OAuthConfig oauthConfig;
     @Inject
@@ -83,7 +88,7 @@ public class OAuthServiceImpl implements OAuthService {
 
     public OAuthAuthenticationToken requestTokensWithClientCredentials(List<String> scopes) {
         LOGGER.debug("Authenticating with client credentials for scopes: {}", scopes);
-        return requestTokens(oauthProvider, oauthConfig, new ClientCredentialsGrant(), null, scopes);
+        return requestTokens(oauthProvider, oauthConfig, new ClientCredentialsGrant(), null, createScope(scopes));
     }
 
     @Override
@@ -99,7 +104,7 @@ public class OAuthServiceImpl implements OAuthService {
             JWT idToken = (JWT) authenticationToken.getPrincipal();
 
             // Validate id token
-            IDTokenClaimsSet idClaimsSet = validateIdToken(
+            IDTokenClaimsSet idClaimSet = validateIdToken(
                     idToken,
                     ((OidcAuthenticationTokenImpl) authenticationToken).getNonce()
             );
@@ -108,15 +113,24 @@ public class OAuthServiceImpl implements OAuthService {
             JWTClaimsSet claimsSet = validateAccessToken(
                     accessToken,
                     idToken.getHeader().getAlgorithm(),
-                    idClaimsSet.getAccessTokenHash()
+                    idClaimSet.getAccessTokenHash()
             );
 
-            return new TokenValidationResult(
-                    Optional.ofNullable(idClaimsSet.getSubject())
+            // Fetch person claims if configured, otherwise use token subject id claim
+            Map<String, String> personClaims = resolvePersonClaims(
+                    authenticationToken,
+                    Optional.ofNullable(idClaimSet.getSubject())
                             .map(Subject::getValue)
-                            .orElseThrow(() -> new TokenValidationException("Unable to retrieve subject from ID token")),
+                            .orElseThrow(() -> new TokenValidationException("Unable to retrieve subject from ID token"))
+            );
+
+            // ID token claims always have precedence over user info claims
+            personClaims.putAll(extractPersonClaims(idClaimSet));
+
+            return new TokenValidationResult(
+                    personClaims.get(SUBJECT_CLAIM),
                     extractScope(claimsSet),
-                    extractClaims(idClaimsSet));
+                    personClaims);
         } else {
             // Validate access token
             JWTClaimsSet claimsSet = validateAccessToken(
@@ -124,12 +138,54 @@ public class OAuthServiceImpl implements OAuthService {
                     JWSAlgorithm.parse(oauthConfig.algorithms().getAccessSigningAlgorithm()),
                     null);
 
+            // Fetch person claims if configured, otherwise use token subject id claim
+            Map<String, String> personClaims = resolvePersonClaims(
+                    authenticationToken,
+                    claimsSet.getSubject()
+            );
+
+            // User info-based principals if automatic fetching is configured
             return new TokenValidationResult(
-                    "",
+                    personClaims.get(SUBJECT_CLAIM),
                     extractScope(claimsSet),
-                    new HashMap<>()
+                    personClaims
             );
         }
+    }
+
+    private Map<String, String> extractPersonClaims(ClaimsSet claimsSet) {
+        Map<String, String> claims = new HashMap<>();
+        PersonClaims.getStandardClaimNames().forEach(claim -> {
+            Object value = claimsSet.getClaim(claim);
+            if (value != null) {
+                claims.put(claim, value.toString());
+            }
+        });
+        return claims;
+    }
+
+    private Map<String, String> resolvePersonClaims(OAuthAuthenticationToken authenticationToken, String tokenSubjectId) {
+        // Fetch user info if possible
+        Map<String, String> personClaims;
+        if (oauthConfig.isAutoFetchUserInfo()) {
+            personClaims = fetchUserInfo(authenticationToken);
+        } else {
+            personClaims = new HashMap<>();
+        }
+
+        // If still no subject claim available, put the default value in
+        if (!personClaims.containsKey(SUBJECT_CLAIM)) {
+            personClaims.put(SUBJECT_CLAIM, tokenSubjectId == null ? "" : tokenSubjectId);
+        }
+
+        // Check if userInfo sub and accessToken sub match
+        String userInfoSubjectId = personClaims.get(SUBJECT_CLAIM);
+        if (tokenSubjectId != null && !tokenSubjectId.equals(userInfoSubjectId)) {
+            throw new TokenValidationException(String.format("Access token - user info subject id mismatch: %s - %s", tokenSubjectId, userInfoSubjectId));
+        }
+
+
+        return personClaims;
     }
 
     @Override
@@ -158,17 +214,6 @@ public class OAuthServiceImpl implements OAuthService {
         return result;
     }
 
-    private Map<String, String> extractClaims(IDTokenClaimsSet idClaimsSet) {
-        Map<String, String> claims = new HashMap<>();
-        IDTokenClaimsSet.getStandardClaimNames().forEach(claim -> {
-            Object value = idClaimsSet.getClaim(claim);
-            if (value != null) {
-                claims.put(claim, value.toString());
-            }
-        });
-        return claims;
-    }
-
     private List<String> extractScope(JWTClaimsSet claimsSet) {
         return Optional.ofNullable(claimsSet.getClaim("scope"))
                 .map(Object::toString)
@@ -193,16 +238,17 @@ public class OAuthServiceImpl implements OAuthService {
         }
 
         try {
-            // Try to verify it as JWT first
-            return validateJwtAccessToken(accessToken, JWSAlgorithm.parse(oauthConfig.algorithms().getAccessSigningAlgorithm()));
-        } catch (TokenValidationException e) {
-            // Opaque token then
+            // Parse the token as JWT
+            JWT jwt = JWTParser.parse(accessToken.getValue());
+            return validateJwtAccessToken(jwt, JWSAlgorithm.parse(oauthConfig.algorithms().getAccessSigningAlgorithm()));
+        } catch (java.text.ParseException e) {
+            // This exception is thrown when the token is not a JWT at all (so an opaque token)
             LOGGER.debug("Falling back to opaque token validation after token failed to validate as JWT: {}", e.getMessage());
             return validateOpaqueAccessToken(accessToken);
         }
     }
 
-    private JWTClaimsSet validateJwtAccessToken(AccessToken accessToken, Algorithm algorithm) {
+    private JWTClaimsSet validateJwtAccessToken(JWT accessToken, Algorithm algorithm) {
         if (algorithm == null) {
             throw new TokenValidationException("No access token algorithm specified");
         }
@@ -235,8 +281,8 @@ public class OAuthServiceImpl implements OAuthService {
 
         // Execute the validation
         try {
-            return jwtProcessor.process(accessToken.getValue(), null);
-        } catch (java.text.ParseException | BadJOSEException | JOSEException e) {
+            return jwtProcessor.process(accessToken, null);
+        } catch (BadJOSEException | JOSEException e) {
             throw new TokenValidationException("Unable to validate JWT access token: " + e.getMessage(), e);
         }
     }
@@ -318,28 +364,24 @@ public class OAuthServiceImpl implements OAuthService {
     }
 
     private Optional<UserInfo> fetchUserInfo(String accessToken) {
-        if (oauthProvider.isOpenIdCapable()) {
-            Optional<URI> userInfoEndpoint = oauthProvider.getUserInfoEndpoint();
-            if (userInfoEndpoint.isPresent()) {
-                UserInfoResponse userInfoResponse;
-                URI endpointURI = userInfoEndpoint.get();
+        Optional<URI> userInfoEndpoint = oauthProvider.getUserInfoEndpoint();
+        if (userInfoEndpoint.isPresent()) {
+            UserInfoResponse userInfoResponse;
+            URI endpointURI = userInfoEndpoint.get();
 
-                try {
-                    userInfoResponse = UserInfoResponse
-                            .parse(new UserInfoRequest(endpointURI, new BearerAccessToken(accessToken))
-                                    .toHTTPRequest().send());
-                } catch (IOException | ParseException e) {
-                    LOGGER.warn("Unable to fetch user info from {}", endpointURI, e);
-                    return Optional.empty();
-                }
-                if (userInfoResponse.indicatesSuccess()) {
-                    return Optional.of(((UserInfoSuccessResponse) userInfoResponse).getUserInfo());
-                } else {
-                    LOGGER.warn("The provider returned an error while fetching user info from {}",
-                            endpointURI,
-                            OAuthUtils.buildGenericError(((ErrorResponse) userInfoResponse)));
-                    return Optional.empty();
-                }
+            try {
+                userInfoResponse = UserInfoResponse
+                        .parse(new UserInfoRequest(endpointURI, new BearerAccessToken(accessToken))
+                                .toHTTPRequest().send());
+            } catch (IOException | ParseException e) {
+                LOGGER.warn("Unable to fetch user info", e);
+                return Optional.empty();
+            }
+            if (userInfoResponse.indicatesSuccess()) {
+                return Optional.of(((UserInfoSuccessResponse) userInfoResponse).getUserInfo());
+            } else {
+                LOGGER.warn("Unable to fetch user info: {}", OAuthUtils.buildGenericError(((ErrorResponse) userInfoResponse)).getDescription());
+                return Optional.empty();
             }
         }
         return Optional.empty();

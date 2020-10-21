@@ -162,22 +162,12 @@ public class OAuthConfig {
 
     @Config("provider")
     public static class ProviderConfig {
-        private OIDCState openIdConnect = OIDCState.AUTO;
         private URI authorization;
         private URI token;
         private URI revocation;
         private URI issuer;
         private URI jwks;
         private URI userInfo;
-
-        public OIDCState getOpenIdConnect() {
-            return openIdConnect;
-        }
-
-        public ProviderConfig setOpenIdConnect(OIDCState openIdConnect) {
-            this.openIdConnect = openIdConnect;
-            return this;
-        }
 
         public URI getAuthorization() {
             return authorization;
@@ -230,16 +220,6 @@ public class OAuthConfig {
         public ProviderConfig setUserInfo(URI userInfo) {
             this.userInfo = userInfo;
             return this;
-        }
-
-        public enum OIDCState {
-            DISABLED,
-            REQUIRED,
-            AUTO;
-
-            public boolean isAllowed() {
-                return this == REQUIRED || this == AUTO;
-            }
         }
     }
 

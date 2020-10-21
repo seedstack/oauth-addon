@@ -7,14 +7,15 @@
  */
 package org.seedstack.oauth.internal;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.RefreshToken;
 import com.nimbusds.openid.connect.sdk.Nonce;
-import java.text.ParseException;
 import org.seedstack.oauth.spi.OidcAuthenticationToken;
+
+import java.text.ParseException;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class OidcAuthenticationTokenImpl extends OAuthAuthenticationTokenImpl implements OidcAuthenticationToken {
     private static final long serialVersionUID = 1L;

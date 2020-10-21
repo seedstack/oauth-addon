@@ -51,11 +51,6 @@ class ManualOAuthProvider implements Provider<OAuthProvider> {
         }
 
         @Override
-        public boolean isOpenIdCapable() {
-            return oauthConfig.provider().getOpenIdConnect().isAllowed();
-        }
-
-        @Override
         public Optional<URI> getIssuer() {
             return Optional.ofNullable(oauthConfig.provider().getIssuer());
         }

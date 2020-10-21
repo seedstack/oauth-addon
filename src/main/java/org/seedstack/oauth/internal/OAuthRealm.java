@@ -75,17 +75,13 @@ public class OAuthRealm implements Realm {
             TokenValidationResult result = oauthService.validate(((OAuthAuthenticationToken) authenticationToken));
             AuthenticationInfo authenticationInfo = new AuthenticationInfo(result.getSubjectId(), accessToken);
 
-            // Put all claims as other principals
+            // TODO: put id token and refresh token as principals ?
+
+            // Put all claims as principals
             Collection<PrincipalProvider<?>> otherPrincipals = authenticationInfo.getOtherPrincipals();
             result.getClaims().forEach((name, value) -> otherPrincipals.add(new SimplePrincipalProvider(name, value)));
 
-            // User info-based principals if automatic fetching is configured
-            if (oAuthConfig.isAutoFetchUserInfo()) {
-                oauthService.fetchUserInfo(((OAuthAuthenticationToken) authenticationToken))
-                        .forEach((name, value) -> otherPrincipals.add(new SimplePrincipalProvider(name, value)));
-            }
-
-            // Scope as principal (SDK specific)
+            // Scope as principal (internal principal for role/permission extraction)
             otherPrincipals.add(new ScopePrincipalProvider(new Scope(result.getScopes().toArray(new String[0]))));
 
             return authenticationInfo;

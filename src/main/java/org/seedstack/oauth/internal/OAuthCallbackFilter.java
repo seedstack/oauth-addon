@@ -7,11 +7,6 @@
  */
 package org.seedstack.oauth.internal;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.apache.shiro.web.util.WebUtils.toHttp;
-import static org.seedstack.oauth.internal.OAuthUtils.buildGenericError;
-import static org.seedstack.oauth.internal.OAuthUtils.requestTokens;
-
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
 import com.nimbusds.oauth2.sdk.AuthorizationResponse;
@@ -20,19 +15,6 @@ import com.nimbusds.oauth2.sdk.ErrorResponse;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.id.State;
 import com.nimbusds.openid.connect.sdk.Nonce;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import javax.inject.Inject;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -46,6 +28,26 @@ import org.seedstack.seed.web.SecurityFilter;
 import org.seedstack.seed.web.security.SessionRegeneratingFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.shiro.web.util.WebUtils.toHttp;
+import static org.seedstack.oauth.internal.OAuthUtils.buildGenericError;
+import static org.seedstack.oauth.internal.OAuthUtils.createScope;
+import static org.seedstack.oauth.internal.OAuthUtils.requestTokens;
 
 @SecurityFilter("oauthCallback")
 public class OAuthCallbackFilter extends AuthenticatingFilter implements SessionRegeneratingFilter {
@@ -87,7 +89,8 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
                         parseAuthorizationCode(toHttp(request)),
                         checkNotNull(oauthConfig.getRedirect(), "Missing redirect URI")),
                 getNonce(),
-                null);
+                createScope(oauthConfig.getScopes())
+        );
     }
 
     @Override
@@ -97,7 +100,7 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
 
     @Override
     protected boolean onLoginSuccess(AuthenticationToken token, Subject subject, ServletRequest request,
-            ServletResponse response) throws Exception {
+                                     ServletResponse response) throws Exception {
         regenerateSession(subject);
         issueSuccessRedirect(request, response);
         return false;
@@ -105,7 +108,7 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
 
     @Override
     protected boolean onLoginFailure(AuthenticationToken token, AuthenticationException e, ServletRequest request,
-            ServletResponse response) {
+                                     ServletResponse response) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Authentication exception", e);
         }

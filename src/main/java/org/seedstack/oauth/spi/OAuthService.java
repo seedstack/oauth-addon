@@ -10,6 +10,7 @@ package org.seedstack.oauth.spi;
 import org.seedstack.seed.security.AuthenticationToken;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +45,19 @@ public interface OAuthService {
      * @return the requested tokens wrapped in an {@link OAuthAuthenticationToken}.
      */
     OAuthAuthenticationToken requestTokensWithClientCredentials(List<String> scopes);
+
+    /**
+     * Obtain an authentication token with the configured client credentials, requesting the specified scopes.
+     * Useful for machine-to-machine scenarios. The tokens can then be directly passed to external resource servers
+     * or can be used to login locally by passing the returned object to
+     * {@link org.seedstack.seed.security.SecuritySupport#login(AuthenticationToken)}.
+     *
+     * @param scopes the requested scopes.
+     * @return the requested tokens wrapped in an {@link OAuthAuthenticationToken}.
+     */
+    default OAuthAuthenticationToken requestTokensWithClientCredentials(String... scopes) {
+        return requestTokensWithClientCredentials(Arrays.asList(scopes));
+    }
 
     /**
      * Programmatically validates an {@link OAuthAuthenticationToken}. The access token is always validated, as a JWT

@@ -7,6 +7,8 @@
  */
 package org.seedstack.oauth.fixtures.provider;
 
+import org.seedstack.oauth.fixtures.TokenBuilder;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -23,7 +25,7 @@ public class UserInfoResource {
 
     private UserInformation userInformation() {
         UserInformation userInfo = new UserInformation();
-        userInfo.setSub("248289761001");
+        userInfo.setSub(TokenBuilder.SUBJECT_ID);
         userInfo.setGiven_name("Jyoti");
         userInfo.setFamily_name("Athalye");
         userInfo.setName("Jyoti Athalye");

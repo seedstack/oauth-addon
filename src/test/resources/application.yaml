@@ -25,7 +25,7 @@ security:
     redirect: ${runtime.web.baseUrl}/callback
     clientId: testClientId
     clientSecret: testClientSecret
-    scopes: email
+    scopes: [email, openid]
     accessTokenValidator: org.seedstack.oauth.fixtures.TestAccessTokenValidator
     provider:
       authorization: ${runtime.web.baseUrl}/api/provider/authorize

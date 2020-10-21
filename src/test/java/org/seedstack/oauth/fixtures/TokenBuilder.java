@@ -38,6 +38,7 @@ public class TokenBuilder {
     private static final String TOKEN_TYPE = "Bearer";
     private static final int TOKEN_EXPIRES_IN = 3563;
     private static final String RSA_KEY_ID = "5ef69cb85daeef24c4791e20553af176fd216e68";
+    public static final String SUBJECT_ID = "118090614001964330293";
     private String clientID = "";
     private boolean testInvalidNonce;
     private boolean testTokenExpiry;
@@ -122,7 +123,7 @@ public class TokenBuilder {
         return new JWTClaimsSet.Builder()
                 .claim("at_hash", "GlCoaDfQuUvpilxrKRBBdQ")
                 .audience(clientID)
-                .subject("118090614001964330293")
+                .subject(SUBJECT_ID)
                 .claim("email_verified", "true")
                 .claim("azp", clientID)
                 .issuer("https://mockedserver.com")

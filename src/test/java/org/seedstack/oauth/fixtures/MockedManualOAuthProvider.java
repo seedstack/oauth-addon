@@ -7,12 +7,13 @@
  */
 package org.seedstack.oauth.fixtures;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Optional;
 import org.seedstack.oauth.spi.OAuthProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Optional;
 
 public class MockedManualOAuthProvider implements OAuthProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(MockedManualOAuthProvider.class);
@@ -48,11 +49,6 @@ public class MockedManualOAuthProvider implements OAuthProvider {
             LOGGER.debug("Unable to fetch revocation endpoint");
         }
         return Optional.of(revokeEndpoint);
-    }
-
-    @Override
-    public boolean isOpenIdCapable() {
-        return true;
     }
 
     @Override

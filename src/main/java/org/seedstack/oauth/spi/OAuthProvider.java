@@ -20,8 +20,6 @@ public interface OAuthProvider {
 
     Optional<URI> getRevocationEndpoint();
 
-    boolean isOpenIdCapable();
-
     Optional<URI> getIssuer();
 
     Optional<URI> getUserInfoEndpoint();

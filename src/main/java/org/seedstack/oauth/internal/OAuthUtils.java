@@ -18,10 +18,10 @@ import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
+import com.nimbusds.oauth2.sdk.http.HTTPResponse;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.token.Tokens;
 import com.nimbusds.openid.connect.sdk.Nonce;
-import com.nimbusds.openid.connect.sdk.OIDCScopeValue;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
 import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
 import org.seedstack.oauth.OAuthConfig;
@@ -42,6 +42,8 @@ import java.util.Map;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 final class OAuthUtils {
+    public static final String OPENID_SCOPE = "openid";
+
     private OAuthUtils() {
         // no instantiation allowed
     }
@@ -87,7 +89,7 @@ final class OAuthUtils {
     }
 
     static OAuthAuthenticationTokenImpl requestTokens(OAuthProvider oauthProvider, OAuthConfig oauthConfig,
-                                                      AuthorizationGrant authorizationGrant, Nonce nonce, List<String> scopes) {
+                                                      AuthorizationGrant authorizationGrant, Nonce nonce, Scope scope) {
         URI endpointURI = oauthProvider.getTokenEndpoint();
         Map<String, List<String>> parameters = OAuthUtils.extractQueryParameters(endpointURI);
         endpointURI = OAuthUtils.stripQueryString(endpointURI);
@@ -101,16 +103,28 @@ final class OAuthUtils {
                         new ClientID(checkNotNull(oauthConfig.getClientId(), "Missing client identifier")),
                         new Secret(checkNotNull(oauthConfig.getClientSecret(), "Missing client secret"))),
                 authorizationGrant,
-                createScope(scopes, oauthProvider),
+                scope,
                 new ArrayList<>(),
                 parameters);
 
         TokenResponse tokenResponse;
         try {
-            if (oauthProvider.isOpenIdCapable()) {
-                tokenResponse = OIDCTokenResponse.parse(tokenRequest.toHTTPRequest().send());
+            HTTPResponse httpResponse = tokenRequest.toHTTPRequest().send();
+            if (httpResponse.indicatesSuccess()) {
+                if (scope.contains(OPENID_SCOPE)) {
+                    tokenResponse = OIDCTokenResponse.parse(httpResponse);
+                } else {
+                    tokenResponse = TokenResponse.parse(httpResponse);
+                }
             } else {
-                tokenResponse = TokenResponse.parse(tokenRequest.toHTTPRequest().send());
+                String errMsg;
+                try {
+                    errMsg = httpResponse.getContentAsJSONObject().getAsString("error_description");
+                } catch (ParseException e) {
+                    errMsg = httpResponse.getContent();
+                }
+                throw SeedException.createNew(OAuthErrorCode.FAILED_TO_REQUEST_TOKENS)
+                        .put("reason", String.format("HTTP %d: %s", httpResponse.getStatusCode(), errMsg));
             }
         } catch (IOException | ParseException e) {
             throw SeedException.wrap(e, OAuthErrorCode.FAILED_TO_REQUEST_TOKENS);
@@ -133,16 +147,11 @@ final class OAuthUtils {
         }
     }
 
-    static Scope createScope(List<String> scopes, OAuthProvider oAuthProvider) {
-        Scope scope;
+    static Scope createScope(List<String> scopes) {
         if (scopes == null) {
-            return null;
+            return new Scope();
         } else {
-            scope = new Scope(scopes.toArray(new String[0]));
+            return new Scope(scopes.toArray(new String[0]));
         }
-        if (oAuthProvider.isOpenIdCapable()) {
-            scope.add(OIDCScopeValue.OPENID);
-        }
-        return scope;
     }
 }

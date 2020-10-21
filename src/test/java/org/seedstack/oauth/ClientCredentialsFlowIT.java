@@ -7,6 +7,7 @@
  */
 package org.seedstack.oauth;
 
+import org.assertj.core.util.Lists;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -61,7 +62,7 @@ public class ClientCredentialsFlowIT {
 
     @Test
     public void accessUserInfo() {
-        OAuthAuthenticationToken token = oauthService.requestTokensWithClientCredentials();
+        OAuthAuthenticationToken token = oauthService.requestTokensWithClientCredentials(Lists.newArrayList("openid"));
         securitySupport.login(token);
 
         assertThat(securitySupport.getSimplePrincipalByName(Principals.FIRST_NAME).get()).isEqualTo("Jyoti");
