@@ -35,7 +35,7 @@ public class OAuthConfig {
     private Map<String, List<String>> customParameters = new HashMap<>();
     private Class<? extends AccessTokenValidator> accessTokenValidator = UserInfoAccessTokenValidator.class;
     private boolean autoFetchUserInfo = false;
-    private boolean treatScopesAsPermissions = false;
+    private boolean treatScopesAsRoles = false;
 
     public ProviderConfig provider() {
         return provider;
@@ -151,12 +151,12 @@ public class OAuthConfig {
         return this;
     }
 
-    public boolean isTreatScopesAsPermissions() {
-        return treatScopesAsPermissions;
+    public boolean isTreatScopesAsRoles() {
+        return treatScopesAsRoles;
     }
 
-    public OAuthConfig setTreatScopesAsPermissions(boolean treatScopesAsPermissions) {
-        this.treatScopesAsPermissions = treatScopesAsPermissions;
+    public OAuthConfig setTreatScopesAsRoles(boolean treatScopesAsRoles) {
+        this.treatScopesAsRoles = treatScopesAsRoles;
         return this;
     }
 

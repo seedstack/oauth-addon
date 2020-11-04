@@ -3,7 +3,7 @@
 * [brk] Simplified and new configuration options.
 * [new] A default opaque token validator is now provided (validating the access token by calling the userInfo endpoint if available). 
 * [new] Improved token validation (at_hash optional, try validating access token as JWT first, then as an opaque token if it fails).
-* [new] Allow treating scopes either as roles (which can give permissions) or as direct permissions.
+* [new] Allow treating scopes either as direct permissions (the default) or as roles (which then can give permissions through a `RolePermissionResolver`).
 * [new] Extract claims from ID token if available and enrich them with the userInfo endpoint if enabled (off by default).
 * [new] Proper support for bearer access tokens.
 * [chg] Improved client error messages.

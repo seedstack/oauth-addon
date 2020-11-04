@@ -48,20 +48,20 @@ public class OAuthRealm implements Realm {
 
     @Override
     public Set<String> getRealmPermissions(PrincipalProvider<?> identityPrincipal, Collection<PrincipalProvider<?>> otherPrincipals) {
-        if (oAuthConfig.isTreatScopesAsPermissions()) {
-            return scopesToStringList(otherPrincipals);
-        } else {
+        if (oAuthConfig.isTreatScopesAsRoles()) {
             return new HashSet<>();
+        } else {
+            return scopesToStringList(otherPrincipals);
         }
     }
 
     @Override
     public Set<String> getRealmRoles(PrincipalProvider<?> identityPrincipal,
                                      Collection<PrincipalProvider<?>> otherPrincipals) {
-        if (oAuthConfig.isTreatScopesAsPermissions()) {
-            return new HashSet<>();
-        } else {
+        if (oAuthConfig.isTreatScopesAsRoles()) {
             return scopesToStringList(otherPrincipals);
+        } else {
+            return new HashSet<>();
         }
     }
 
