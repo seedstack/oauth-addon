@@ -1,4 +1,4 @@
-# Version 1.2.0 (2020-11-09)
+# Version 2.0.0 (2020-11-09)
 
 * [brk] Simplified and new configuration options.
 * [new] A default opaque token validator is now provided (validating the access token by calling the userInfo endpoint if available). 
