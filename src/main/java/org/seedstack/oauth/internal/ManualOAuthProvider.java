@@ -8,7 +8,7 @@
 package org.seedstack.oauth.internal;
 
 import org.seedstack.oauth.OAuthConfig;
-import org.seedstack.oauth.spi.OAuthProvider;
+import org.seedstack.oauth.OAuthProvider;
 import org.seedstack.seed.Application;
 
 import javax.inject.Inject;

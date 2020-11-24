@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package org.seedstack.oauth.spi;
+package org.seedstack.oauth;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,17 +15,20 @@ import java.util.Map;
 
 /**
  * This class describes the information obtained from successful token validation: the subject id if authenticated
- * (empty string otherwise), the granted scopes and the identity claims if any.
+ * (empty string otherwise), the granted scopes and the person claims if any.
  */
 public class TokenValidationResult {
     private final String subjectId;
     private final List<String> scopes;
-    private final Map<String, String> claims;
+    private final Map<String, Object> claims;
+    private final OAuthAuthenticationToken token;
 
-    public TokenValidationResult(String subjectId, List<String> scopes, Map<String, String> claims) {
+    public TokenValidationResult(String subjectId, List<String> scopes, Map<String, Object> claims,
+                                 OAuthAuthenticationToken token) {
         this.subjectId = subjectId;
         this.scopes = new ArrayList<>(scopes);
         this.claims = new HashMap<>(claims);
+        this.token = token;
     }
 
     public String getSubjectId() {
@@ -36,7 +39,15 @@ public class TokenValidationResult {
         return Collections.unmodifiableList(scopes);
     }
 
-    public Map<String, String> getClaims() {
+    public Map<String, Object> getClaims() {
         return Collections.unmodifiableMap(claims);
+    }
+
+    public OAuthAuthenticationToken getToken() {
+        return token;
+    }
+
+    public boolean isAnonymous() {
+        return subjectId == null || subjectId.isEmpty();
     }
 }

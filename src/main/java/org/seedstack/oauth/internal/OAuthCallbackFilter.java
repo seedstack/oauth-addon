@@ -18,10 +18,11 @@ import com.nimbusds.openid.connect.sdk.Nonce;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationToken;
+import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.web.filter.authc.AuthenticatingFilter;
 import org.seedstack.oauth.OAuthConfig;
-import org.seedstack.oauth.spi.OAuthService;
+import org.seedstack.oauth.OAuthService;
 import org.seedstack.seed.Configuration;
 import org.seedstack.seed.SeedException;
 import org.seedstack.seed.web.SecurityFilter;
@@ -33,8 +34,6 @@ import javax.inject.Inject;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -48,49 +47,33 @@ import static org.apache.shiro.web.util.WebUtils.toHttp;
 import static org.seedstack.oauth.internal.OAuthUtils.buildGenericError;
 import static org.seedstack.oauth.internal.OAuthUtils.createScope;
 import static org.seedstack.oauth.internal.OAuthUtils.requestTokens;
+import static org.seedstack.oauth.internal.OAuthUtils.sendForbidden;
 
 @SecurityFilter("oauthCallback")
 public class OAuthCallbackFilter extends AuthenticatingFilter implements SessionRegeneratingFilter {
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuthCallbackFilter.class);
-    private static final String DEFAULT_REDIRECT_URL = "/";
-    private static final String AUTHORIZATION = "Authorization";
-    private String redirectUrl = DEFAULT_REDIRECT_URL;
     @Inject
     private OAuthService oAuthService;
     @Configuration
     private OAuthConfig oauthConfig;
 
     @Override
-    protected boolean executeLogin(ServletRequest request, ServletResponse response) throws Exception {
-        AuthenticationToken token = createToken(request, response);
-        if (token == null) {
-            String msg = "createToken method implementation returned null. A valid non-null AuthenticationToken " +
-                    "must be created in order to execute a login attempt.";
-            throw new IllegalStateException(msg);
-        }
-        try {
-            Subject subject = getSubject(request, response);
-            subject.login(token);
-
-            ((HttpServletResponse) response).addHeader(AUTHORIZATION, token.getCredentials().toString());
-
-            return onLoginSuccess(token, subject, request, response);
-        } catch (AuthenticationException e) {
-            return onLoginFailure(token, e, request, response);
-        }
-    }
-
-    @Override
     protected AuthenticationToken createToken(ServletRequest request, ServletResponse response) {
-        return requestTokens(
-                oAuthService.getOAuthProvider(),
-                oauthConfig,
-                new AuthorizationCodeGrant(
-                        parseAuthorizationCode(toHttp(request)),
-                        checkNotNull(oauthConfig.getRedirect(), "Missing redirect URI")),
-                getNonce(),
-                createScope(oauthConfig.getScopes())
-        );
+        try {
+            AuthorizationCode authorizationCode = parseAuthorizationCode(toHttp(request));
+            return requestTokens(
+                    oAuthService.getOAuthProvider(),
+                    oauthConfig,
+                    new AuthorizationCodeGrant(
+                            authorizationCode,
+                            checkNotNull(oauthConfig.getRedirect(), "Missing redirect URI")),
+                    getNonce(),
+                    createScope(oauthConfig.getScopes())
+            );
+        } catch (Exception e) {
+            sendForbidden(new AuthenticationException("Failed to request OAuth tokens: " + e.getMessage(), e), response);
+            return OAuthAuthenticationTokenImpl.EMPTY;
+        }
     }
 
     @Override
@@ -109,39 +92,11 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
     @Override
     protected boolean onLoginFailure(AuthenticationToken token, AuthenticationException e, ServletRequest request,
                                      ServletResponse response) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Authentication exception", e);
-        }
-
-        try {
-            ((HttpServletResponse) response).sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage());
-        } catch (IOException e1) {
-            LOGGER.debug("Unable to send 403 HTTP code to client", e1);
-        }
+        sendForbidden(e, response);
         return false;
     }
 
-    /**
-     * Returns the URL to where the user will be redirected after logout. Default is the web application's context
-     * root, i.e. {@code "/"}
-     *
-     * @return the URL to where the user will be redirected after logout.
-     */
-    public String getRedirectUrl() {
-        return redirectUrl;
-    }
-
-    /**
-     * Sets the URL to where the user will be redirected after logout. Default is the web application's context root,
-     * i.e. {@code "/"}
-     *
-     * @param redirectUrl the url to where the user will be redirected after logout
-     */
-    public void setRedirectUrl(String redirectUrl) {
-        this.redirectUrl = redirectUrl;
-    }
-
-    private AuthorizationCode parseAuthorizationCode(HttpServletRequest request) {
+    private AuthorizationCode parseAuthorizationCode(HttpServletRequest request) throws AuthorizationException {
         AuthorizationResponse authorizationResponse;
         try {
             authorizationResponse = AuthorizationResponse

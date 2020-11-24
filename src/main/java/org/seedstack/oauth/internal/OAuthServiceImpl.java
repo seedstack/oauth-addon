@@ -33,7 +33,6 @@ import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.id.Audience;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
-import com.nimbusds.oauth2.sdk.id.Subject;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.openid.connect.sdk.Nonce;
@@ -41,23 +40,22 @@ import com.nimbusds.openid.connect.sdk.UserInfoRequest;
 import com.nimbusds.openid.connect.sdk.UserInfoResponse;
 import com.nimbusds.openid.connect.sdk.UserInfoSuccessResponse;
 import com.nimbusds.openid.connect.sdk.claims.AccessTokenHash;
-import com.nimbusds.openid.connect.sdk.claims.ClaimsSet;
 import com.nimbusds.openid.connect.sdk.claims.IDTokenClaimsSet;
-import com.nimbusds.openid.connect.sdk.claims.PersonClaims;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenClaimsVerifier;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import com.nimbusds.openid.connect.sdk.validators.InvalidHashException;
+import net.minidev.json.JSONObject;
+import org.seedstack.oauth.AccessTokenValidator;
+import org.seedstack.oauth.OAuthAuthenticationToken;
 import org.seedstack.oauth.OAuthConfig;
-import org.seedstack.oauth.spi.AccessTokenValidator;
-import org.seedstack.oauth.spi.OAuthAuthenticationToken;
-import org.seedstack.oauth.spi.OAuthProvider;
-import org.seedstack.oauth.spi.OAuthService;
-import org.seedstack.oauth.spi.TokenValidationException;
-import org.seedstack.oauth.spi.TokenValidationResult;
+import org.seedstack.oauth.OAuthProvider;
+import org.seedstack.oauth.OAuthService;
+import org.seedstack.oauth.TokenValidationException;
+import org.seedstack.oauth.TokenValidationResult;
+import org.seedstack.seed.Application;
 import org.seedstack.seed.Configuration;
 import org.seedstack.seed.security.AuthenticationException;
-import org.seedstack.seed.security.principals.Principals;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,9 +66,11 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.seedstack.oauth.internal.OAuthUtils.createScope;
@@ -78,17 +78,24 @@ import static org.seedstack.oauth.internal.OAuthUtils.requestTokens;
 
 public class OAuthServiceImpl implements OAuthService {
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuthServiceImpl.class);
-    private static final String SUBJECT_CLAIM = "sub";
     @Configuration
     private OAuthConfig oauthConfig;
+    @Inject
+    private Application application;
     @Inject
     private OAuthProvider oauthProvider;
     @Inject
     private Provider<AccessTokenValidator> accessTokenValidatorProvider;
 
-    public OAuthAuthenticationToken requestTokensWithClientCredentials(List<String> scopes) {
+    public OAuthAuthenticationToken requestTokensWithClientCredentials(List<String> scopes) throws AuthenticationException {
         LOGGER.debug("Authenticating with client credentials for scopes: {}", scopes);
-        return requestTokens(oauthProvider, oauthConfig, new ClientCredentialsGrant(), null, createScope(scopes));
+        return requestTokens(
+                oauthProvider,
+                oauthConfig,
+                new ClientCredentialsGrant(),
+                null,
+                createScope(scopes)
+        );
     }
 
     @Override
@@ -101,7 +108,7 @@ public class OAuthServiceImpl implements OAuthService {
         LOGGER.debug("Validating OAuth tokens for subject {}", authenticationToken.getPrincipal());
         AccessToken accessToken = (AccessToken) checkNotNull(authenticationToken).getCredentials();
         if (authenticationToken instanceof OidcAuthenticationTokenImpl) {
-            JWT idToken = (JWT) authenticationToken.getPrincipal();
+            JWT idToken = ((OidcAuthenticationTokenImpl) authenticationToken).getJWTIdToken();
 
             // Validate id token
             IDTokenClaimsSet idClaimSet = validateIdToken(
@@ -116,21 +123,11 @@ public class OAuthServiceImpl implements OAuthService {
                     idClaimSet.getAccessTokenHash()
             );
 
-            // Fetch person claims if configured, otherwise use token subject id claim
-            Map<String, String> personClaims = resolvePersonClaims(
-                    authenticationToken,
-                    Optional.ofNullable(idClaimSet.getSubject())
-                            .map(Subject::getValue)
-                            .orElseThrow(() -> new TokenValidationException("Unable to retrieve subject from ID token"))
-            );
-
-            // ID token claims always have precedence over user info claims
-            personClaims.putAll(extractPersonClaims(idClaimSet));
-
             return new TokenValidationResult(
-                    personClaims.get(SUBJECT_CLAIM),
+                    idClaimSet.getSubject().getValue(),
                     extractScope(claimsSet),
-                    personClaims);
+                    new HashMap<>(idClaimSet.toJSONObject()),
+                    authenticationToken);
         } else {
             // Validate access token
             JWTClaimsSet claimsSet = validateAccessToken(
@@ -138,80 +135,18 @@ public class OAuthServiceImpl implements OAuthService {
                     JWSAlgorithm.parse(oauthConfig.algorithms().getAccessSigningAlgorithm()),
                     null);
 
-            // Fetch person claims if configured, otherwise use token subject id claim
-            Map<String, String> personClaims = resolvePersonClaims(
-                    authenticationToken,
-                    claimsSet.getSubject()
-            );
-
             // User info-based principals if automatic fetching is configured
             return new TokenValidationResult(
-                    personClaims.get(SUBJECT_CLAIM),
+                    Optional.ofNullable(claimsSet.getSubject()).orElse(""),
                     extractScope(claimsSet),
-                    personClaims
-            );
+                    new HashMap<>(claimsSet.toJSONObject()),
+                    authenticationToken);
         }
-    }
-
-    private Map<String, String> extractPersonClaims(ClaimsSet claimsSet) {
-        Map<String, String> claims = new HashMap<>();
-        PersonClaims.getStandardClaimNames().forEach(claim -> {
-            Object value = claimsSet.getClaim(claim);
-            if (value != null) {
-                claims.put(claim, value.toString());
-            }
-        });
-        return claims;
-    }
-
-    private Map<String, String> resolvePersonClaims(OAuthAuthenticationToken authenticationToken, String tokenSubjectId) {
-        // Fetch user info if possible
-        Map<String, String> personClaims;
-        if (oauthConfig.isAutoFetchUserInfo()) {
-            personClaims = fetchUserInfo(authenticationToken);
-        } else {
-            personClaims = new HashMap<>();
-        }
-
-        // If still no subject claim available, put the default value in
-        if (!personClaims.containsKey(SUBJECT_CLAIM)) {
-            personClaims.put(SUBJECT_CLAIM, tokenSubjectId == null ? "" : tokenSubjectId);
-        }
-
-        // Check if userInfo sub and accessToken sub match
-        String userInfoSubjectId = personClaims.get(SUBJECT_CLAIM);
-        if (tokenSubjectId != null && !tokenSubjectId.equals(userInfoSubjectId)) {
-            throw new TokenValidationException(String.format("Access token - user info subject id mismatch: %s - %s", tokenSubjectId, userInfoSubjectId));
-        }
-
-
-        return personClaims;
     }
 
     @Override
-    public Map<String, String> fetchUserInfo(OAuthAuthenticationToken authenticationToken) {
-        LOGGER.debug("Fetching user info for subject {}", authenticationToken.getPrincipal());
-        Map<String, String> result = new HashMap<>();
-
-        fetchUserInfo(authenticationToken.getAccessToken()).ifPresent(userInfo -> {
-            // Standard SeedStack principals if present (SDK and realm neutral)
-            Optional.ofNullable(userInfo.getGivenName())
-                    .ifPresent(val -> result.put(Principals.FIRST_NAME, val));
-            Optional.ofNullable(userInfo.getFamilyName())
-                    .ifPresent(val -> result.put(Principals.LAST_NAME, val));
-            Optional.ofNullable(userInfo.getName())
-                    .ifPresent(val -> result.put(Principals.FULL_NAME, val));
-            Optional.ofNullable(userInfo.getLocale())
-                    .ifPresent(val -> result.put(Principals.LOCALE, val));
-
-            // Standard claims as principals under their own name (SDK neutral)
-            for (String claimName : UserInfo.getStandardClaimNames()) {
-                Optional.ofNullable(userInfo.getStringClaim(claimName))
-                        .ifPresent(val -> result.put(claimName, val));
-            }
-        });
-
-        return result;
+    public Map<String, Object> fetchUserInfo(OAuthAuthenticationToken authenticationToken) {
+        return new HashMap<>(fetchUserInfo(authenticationToken.getAccessToken()).map(UserInfo::toJSONObject).orElse(new JSONObject()));
     }
 
     private List<String> extractScope(JWTClaimsSet claimsSet) {
@@ -268,12 +203,24 @@ public class OAuthServiceImpl implements OAuthService {
         });
 
         // Claims verification
-        JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder();
-        oauthProvider.getIssuer().ifPresent(issuer -> builder.issuer(issuer.toString()));
+        JWTClaimsSet.Builder exactMatchClaimsBuilder = new JWTClaimsSet.Builder();
+        oauthConfig.getExactMatchClaims().forEach(exactMatchClaimsBuilder::claim);
+
+        // Audience verification
+        Set<String> allowedAudiences = oauthConfig.getAllowedAudiences();
+        if (allowedAudiences != null) {
+            allowedAudiences = new HashSet<>(allowedAudiences);
+            if (allowedAudiences.isEmpty()) {
+                // If no allowed audience is specified, we use the application ID by default
+                allowedAudiences.add(application.getId());
+            }
+        }
+
+        // Configure the processor
         jwtProcessor.setJWTClaimsSetVerifier(
                 new DefaultJWTClaimsVerifier<>(
-                        oauthConfig.getAllowedAudiences(),
-                        builder.build(),
+                        allowedAudiences,
+                        exactMatchClaimsBuilder.build(),
                         oauthConfig.getRequiredClaims(),
                         oauthConfig.getProhibitedClaims()
                 )
@@ -363,7 +310,7 @@ public class OAuthServiceImpl implements OAuthService {
         return new IDTokenClaimsVerifier(expectedIssuer, clientId, nonce, 0);
     }
 
-    private Optional<UserInfo> fetchUserInfo(String accessToken) {
+    Optional<UserInfo> fetchUserInfo(String accessToken) {
         Optional<URI> userInfoEndpoint = oauthProvider.getUserInfoEndpoint();
         if (userInfoEndpoint.isPresent()) {
             UserInfoResponse userInfoResponse;

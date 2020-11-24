@@ -10,6 +10,7 @@ rest:
   path: /api
 
 security:
+  cache: true
   realms: OAuthRealm
   web:
     urls:

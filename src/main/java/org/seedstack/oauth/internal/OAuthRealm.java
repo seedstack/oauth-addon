@@ -9,10 +9,11 @@ package org.seedstack.oauth.internal;
 
 import com.nimbusds.oauth2.sdk.Scope;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
+import com.nimbusds.openid.connect.sdk.claims.UserInfo;
+import org.seedstack.oauth.OAuthAuthenticationToken;
 import org.seedstack.oauth.OAuthConfig;
-import org.seedstack.oauth.spi.OAuthAuthenticationToken;
-import org.seedstack.oauth.spi.OAuthService;
-import org.seedstack.oauth.spi.TokenValidationResult;
+import org.seedstack.oauth.OAuthService;
+import org.seedstack.oauth.TokenValidationResult;
 import org.seedstack.seed.Configuration;
 import org.seedstack.seed.security.AuthenticationException;
 import org.seedstack.seed.security.AuthenticationInfo;
@@ -29,7 +30,9 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -66,20 +69,50 @@ public class OAuthRealm implements Realm {
     }
 
     @Override
-    public AuthenticationInfo getAuthenticationInfo(
-            AuthenticationToken authenticationToken) throws AuthenticationException {
-        if (authenticationToken instanceof OAuthAuthenticationToken) {
+    public AuthenticationInfo getAuthenticationInfo(AuthenticationToken authenticationToken) throws AuthenticationException {
+        if (authenticationToken instanceof OAuthAuthenticationTokenImpl) {
             AccessToken accessToken = (AccessToken) authenticationToken.getCredentials();
 
-            // Validate token to build basic authentication info
+            // Validate token and extract claims
             TokenValidationResult result = oauthService.validate(((OAuthAuthenticationToken) authenticationToken));
-            AuthenticationInfo authenticationInfo = new AuthenticationInfo(result.getSubjectId(), accessToken);
+            Map<String, Object> claims = new HashMap<>(result.getClaims());
+            String subjectId = result.getSubjectId();
+            UserInfo userInfo = null;
 
-            // TODO: put id token and refresh token as principals ?
+            // Override/complete claims with userInfo if fetching is enabled
+            if (oAuthConfig.isAutoFetchUserInfo()) {
+                Optional<UserInfo> optionalUserInfo = ((OAuthServiceImpl) oauthService).fetchUserInfo(accessToken.getValue());
+                if (optionalUserInfo.isPresent()) {
+                    userInfo = optionalUserInfo.get();
+                    // If tokens didn't provide subject id, use userInfo one (always present)
+                    if (result.isAnonymous()) {
+                        subjectId = userInfo.getSubject().getValue();
+                    }
+                    claims.putAll(userInfo.toJSONObject());
+                }
+            }
 
-            // Put all claims as principals
+            // Build authentication info
+            AuthenticationInfo authenticationInfo = new AuthenticationInfo(subjectId, accessToken);
             Collection<PrincipalProvider<?>> otherPrincipals = authenticationInfo.getOtherPrincipals();
-            result.getClaims().forEach((name, value) -> otherPrincipals.add(new SimplePrincipalProvider(name, value)));
+
+            // Put all claims as simple principals
+            claims.forEach((name, value) -> otherPrincipals.add(new SimplePrincipalProvider(name, String.valueOf(value))));
+
+            // Convert some claims to SeedStack standard principals
+            toSimplePrincipal(subjectId, Principals.IDENTITY).ifPresent(otherPrincipals::add);
+            toSimplePrincipal(claims.get(UserInfo.GIVEN_NAME_CLAIM_NAME), Principals.FIRST_NAME).ifPresent(otherPrincipals::add);
+            toSimplePrincipal(claims.get(UserInfo.FAMILY_NAME_CLAIM_NAME), Principals.LAST_NAME).ifPresent(otherPrincipals::add);
+            toSimplePrincipal(claims.get(UserInfo.NAME_CLAIM_NAME), Principals.FULL_NAME).ifPresent(otherPrincipals::add);
+            toSimplePrincipal(claims.get(UserInfo.LOCALE_CLAIM_NAME), Principals.LOCALE).ifPresent(otherPrincipals::add);
+
+            // Put userInfo as principal if exists
+            if (userInfo != null) {
+                otherPrincipals.add(new UserInfoPrincipalProvider(userInfo));
+            }
+
+            // Put tokens as principal
+            otherPrincipals.add(new TokenPrincipalProvider(result.getToken()));
 
             // Scope as principal (internal principal for role/permission extraction)
             otherPrincipals.add(new ScopePrincipalProvider(new Scope(result.getScopes().toArray(new String[0]))));
@@ -88,6 +121,13 @@ public class OAuthRealm implements Realm {
         } else {
             throw new AuthenticationException("OAuthRealm only supports OAuth authentication tokens");
         }
+    }
+
+    private Optional<SimplePrincipalProvider> toSimplePrincipal(Object claim, String principalName) {
+        if (claim instanceof String) {
+            return Optional.of(new SimplePrincipalProvider(principalName, ((String) claim)));
+        }
+        return Optional.empty();
     }
 
     @Override

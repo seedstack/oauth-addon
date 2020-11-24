@@ -8,9 +8,6 @@
 package org.seedstack.oauth;
 
 import com.google.common.base.Strings;
-import org.seedstack.oauth.spi.AccessTokenValidator;
-import org.seedstack.oauth.spi.OAuthProvider;
-import org.seedstack.oauth.spi.TokenValidationException;
 import org.seedstack.seed.Logging;
 import org.slf4j.Logger;
 
@@ -37,6 +34,7 @@ public class UserInfoAccessTokenValidator implements AccessTokenValidator {
         Optional<URI> userInfoEndpoint = oAuthProvider.getUserInfoEndpoint();
         if (userInfoEndpoint.isPresent()) {
             URI uri = userInfoEndpoint.get();
+            logger.debug("Validating access token by calling userinfo endpoint: {}", uri.toString());
             try {
                 HttpURLConnection urlConnection = (HttpURLConnection) uri.toURL().openConnection();
                 urlConnection.setRequestProperty("Authorization", "Bearer " + accessToken);

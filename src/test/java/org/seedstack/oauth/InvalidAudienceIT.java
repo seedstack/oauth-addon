@@ -53,7 +53,7 @@ public class InvalidAudienceIT {
                 .log().uri()
                 .expect()
                 .log().status()
-                .statusCode(500)
+                .statusCode(403)
                 .when()
                 .get(response2.getHeader(LOCATION));
     }

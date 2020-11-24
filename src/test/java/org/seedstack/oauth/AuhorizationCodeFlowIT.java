@@ -7,15 +7,16 @@
  */
 package org.seedstack.oauth;
 
-import static io.restassured.RestAssured.given;
-
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.seedstack.seed.Configuration;
 import org.seedstack.seed.testing.junit4.SeedITRunner;
 import org.seedstack.seed.undertow.LaunchWithUndertow;
+
+import static io.restassured.RestAssured.given;
 
 @RunWith(SeedITRunner.class)
 @LaunchWithUndertow
@@ -33,6 +34,7 @@ public class AuhorizationCodeFlowIT {
                 .expect()
                 .log().status()
                 .statusCode(302)
+                .header(LOCATION, Matchers.startsWith(baseUrl + "/api/provider/authorize?scope="))
                 .when()
                 .get(baseUrl + "/api/profile");
 
@@ -43,6 +45,7 @@ public class AuhorizationCodeFlowIT {
                 .expect()
                 .log().status()
                 .statusCode(302)
+                .header(LOCATION, Matchers.startsWith(baseUrl + "/callback?code="))
                 .when()
                 .get(response1.getHeader(LOCATION));
 
@@ -51,6 +54,7 @@ public class AuhorizationCodeFlowIT {
                 .expect()
                 .log().status()
                 .statusCode(302)
+                .header(LOCATION, Matchers.startsWith(baseUrl + "/api/profile"))
                 .when()
                 .get(response2.getHeader(LOCATION));
     }

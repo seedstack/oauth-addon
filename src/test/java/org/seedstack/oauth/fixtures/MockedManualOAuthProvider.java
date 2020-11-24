@@ -7,7 +7,7 @@
  */
 package org.seedstack.oauth.fixtures;
 
-import org.seedstack.oauth.spi.OAuthProvider;
+import org.seedstack.oauth.OAuthProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

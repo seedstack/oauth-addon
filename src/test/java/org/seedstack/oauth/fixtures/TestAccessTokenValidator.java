@@ -7,15 +7,14 @@
  */
 package org.seedstack.oauth.fixtures;
 
-import com.google.common.base.Strings;
-import org.seedstack.oauth.spi.AccessTokenValidator;
-import org.seedstack.oauth.spi.TokenValidationException;
+import org.seedstack.oauth.AccessTokenValidator;
+import org.seedstack.oauth.TokenValidationException;
 
 public class TestAccessTokenValidator implements AccessTokenValidator {
     @Override
     public void validate(String accessToken) throws TokenValidationException {
-        if (Strings.isNullOrEmpty(accessToken)) {
-            throw new TokenValidationException("Access Token is not a valid token");
+        if (!TokenBuilder.ACCESS_TOKEN_VALUE.equals(accessToken)) {
+            throw new TokenValidationException("Access token is not valid");
         }
     }
 }

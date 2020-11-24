@@ -24,11 +24,16 @@ import com.nimbusds.oauth2.sdk.token.Tokens;
 import com.nimbusds.openid.connect.sdk.Nonce;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
 import com.nimbusds.openid.connect.sdk.token.OIDCTokens;
+import org.apache.shiro.authc.AuthenticationException;
 import org.seedstack.oauth.OAuthConfig;
-import org.seedstack.oauth.spi.OAuthProvider;
+import org.seedstack.oauth.OAuthProvider;
 import org.seedstack.seed.SeedException;
 import org.seedstack.shed.exception.BaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -43,6 +48,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 final class OAuthUtils {
     public static final String OPENID_SCOPE = "openid";
+    private static final Logger LOGGER = LoggerFactory.getLogger(OAuthUtils.class);
 
     private OAuthUtils() {
         // no instantiation allowed
@@ -152,6 +158,20 @@ final class OAuthUtils {
             return new Scope();
         } else {
             return new Scope(scopes.toArray(new String[0]));
+        }
+    }
+
+    static void sendForbidden(AuthenticationException e, ServletResponse response) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Authentication exception", e);
+        }
+        try {
+            if (!response.isCommitted()) {
+                ((HttpServletResponse) response).sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage());
+            }
+        } catch (IOException | ClassCastException | IllegalStateException e1) {
+            e1.initCause(e);
+            LOGGER.warn("Unable to send 403 HTTP code to client", e1);
         }
     }
 }

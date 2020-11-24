@@ -5,8 +5,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package org.seedstack.oauth.spi;
+package org.seedstack.oauth;
 
+import org.seedstack.seed.security.AuthenticationException;
 import org.seedstack.seed.security.AuthenticationToken;
 
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ public interface OAuthService {
      *
      * @return the requested tokens wrapped in an {@link OAuthAuthenticationToken}.
      */
-    default OAuthAuthenticationToken requestTokensWithClientCredentials() {
+    default OAuthAuthenticationToken requestTokensWithClientCredentials() throws AuthenticationException {
         return requestTokensWithClientCredentials(new ArrayList<>());
     }
 
@@ -44,7 +45,9 @@ public interface OAuthService {
      * @param scopes the requested scopes.
      * @return the requested tokens wrapped in an {@link OAuthAuthenticationToken}.
      */
-    OAuthAuthenticationToken requestTokensWithClientCredentials(List<String> scopes);
+    default OAuthAuthenticationToken requestTokensWithClientCredentials(String... scopes) throws AuthenticationException {
+        return requestTokensWithClientCredentials(Arrays.asList(scopes));
+    }
 
     /**
      * Obtain an authentication token with the configured client credentials, requesting the specified scopes.
@@ -55,9 +58,7 @@ public interface OAuthService {
      * @param scopes the requested scopes.
      * @return the requested tokens wrapped in an {@link OAuthAuthenticationToken}.
      */
-    default OAuthAuthenticationToken requestTokensWithClientCredentials(String... scopes) {
-        return requestTokensWithClientCredentials(Arrays.asList(scopes));
-    }
+    OAuthAuthenticationToken requestTokensWithClientCredentials(List<String> scopes) throws AuthenticationException;
 
     /**
      * Programmatically validates an {@link OAuthAuthenticationToken}. The access token is always validated, as a JWT
@@ -77,7 +78,7 @@ public interface OAuthService {
      * @param authenticationToken the token used to access the authentication token.
      * @return the user info claims.
      */
-    Map<String, String> fetchUserInfo(OAuthAuthenticationToken authenticationToken);
+    Map<String, Object> fetchUserInfo(OAuthAuthenticationToken authenticationToken);
 
     /**
      * @return the configured {@link OAuthProvider}.

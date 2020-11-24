@@ -7,10 +7,9 @@
  */
 package org.seedstack.oauth;
 
-import com.google.common.collect.Sets;
 import org.seedstack.coffig.Config;
-import org.seedstack.oauth.spi.AccessTokenValidator;
 
+import javax.validation.constraints.NotNull;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,16 +21,24 @@ import java.util.Set;
 
 @Config("security.oauth")
 public class OAuthConfig {
+    @NotNull
     private ProviderConfig provider = new ProviderConfig();
+    @NotNull
     private AlgorithmConfig algorithms = new AlgorithmConfig();
     private URI discoveryDocument;
     private URI redirect;
     private String clientId;
     private String clientSecret;
+    @NotNull
     private List<String> scopes = new ArrayList<>();
-    private Set<String> requiredClaims = Sets.newHashSet("sub");
+    @NotNull
+    private Set<String> requiredClaims = new HashSet<>();
+    @NotNull
     private Set<String> prohibitedClaims = new HashSet<>();
+    @NotNull
+    private Map<String, String> exactMatchClaims = new HashMap<>();
     private Set<String> allowedAudiences = new HashSet<>();
+    @NotNull
     private Map<String, List<String>> customParameters = new HashMap<>();
     private Class<? extends AccessTokenValidator> accessTokenValidator = UserInfoAccessTokenValidator.class;
     private boolean autoFetchUserInfo = false;
@@ -107,12 +114,28 @@ public class OAuthConfig {
         return this;
     }
 
+    public Map<String, String> getExactMatchClaims() {
+        return Collections.unmodifiableMap(exactMatchClaims);
+    }
+
+    public void setExactMatchClaims(Map<String, String> exactMatchClaims) {
+        this.exactMatchClaims = new HashMap<>(exactMatchClaims);
+    }
+
+    public void addExactMatchClaim(String name, String value) {
+        this.exactMatchClaims.put(name, value);
+    }
+
     public Set<String> getAllowedAudiences() {
-        return Collections.unmodifiableSet(allowedAudiences);
+        return allowedAudiences == null ? null : Collections.unmodifiableSet(allowedAudiences);
     }
 
     public OAuthConfig setAllowedAudiences(Set<String> allowedAudiences) {
-        this.allowedAudiences = new HashSet<>(allowedAudiences);
+        if (allowedAudiences == null) {
+            this.allowedAudiences = null;
+        } else {
+            this.allowedAudiences = new HashSet<>(allowedAudiences);
+        }
         return this;
     }
 

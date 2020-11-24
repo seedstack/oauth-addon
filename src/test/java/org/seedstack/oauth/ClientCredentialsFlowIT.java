@@ -7,13 +7,13 @@
  */
 package org.seedstack.oauth;
 
+import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import org.assertj.core.util.Lists;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.seedstack.oauth.spi.OAuthAuthenticationToken;
-import org.seedstack.oauth.spi.OAuthService;
+import org.seedstack.oauth.fixtures.TokenBuilder;
 import org.seedstack.seed.Configuration;
 import org.seedstack.seed.security.SecuritySupport;
 import org.seedstack.seed.security.principals.Principals;
@@ -67,6 +67,10 @@ public class ClientCredentialsFlowIT {
 
         assertThat(securitySupport.getSimplePrincipalByName(Principals.FIRST_NAME).get()).isEqualTo("Jyoti");
         assertThat(securitySupport.getSimplePrincipalByName(Principals.LAST_NAME).get()).isEqualTo("Athalye");
+        assertThat(securitySupport.getPrincipalByType(OAuthAuthenticationToken.class).get().getAccessToken()).isEqualTo(TokenBuilder.ACCESS_TOKEN_VALUE);
+        assertThat(securitySupport.getPrincipalByType(UserInfo.class).get().getSubject().getValue()).isEqualTo(TokenBuilder.SUBJECT_ID);
+        assertThat(securitySupport.getPrincipalByType(UserInfo.class).get().getFamilyName()).isEqualTo("Athalye");
+        assertThat(securitySupport.getPrincipalByType(UserInfo.class).get().getGivenName()).isEqualTo("Jyoti");
 
         securitySupport.logout();
     }

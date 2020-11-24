@@ -8,12 +8,15 @@
 package org.seedstack.oauth.internal;
 
 import com.nimbusds.jwt.JWT;
+import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.RefreshToken;
 import com.nimbusds.openid.connect.sdk.Nonce;
-import org.seedstack.oauth.spi.OidcAuthenticationToken;
+import org.seedstack.oauth.OidcAuthenticationToken;
+import org.seedstack.seed.SeedException;
 
 import java.text.ParseException;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -21,6 +24,7 @@ public class OidcAuthenticationTokenImpl extends OAuthAuthenticationTokenImpl im
     private static final long serialVersionUID = 1L;
     private final JWT idToken;
     private final Nonce nonce;
+    private final JWTClaimsSet jwtClaimsSet;
 
     /**
      * Creates an OpenId Connect authentication token.
@@ -32,11 +36,38 @@ public class OidcAuthenticationTokenImpl extends OAuthAuthenticationTokenImpl im
     OidcAuthenticationTokenImpl(AccessToken accessToken, RefreshToken refreshToken, JWT idToken, Nonce nonce) {
         super(accessToken, refreshToken);
         this.idToken = checkNotNull(idToken, "id token cannot be null");
+        try {
+            this.jwtClaimsSet = this.idToken.getJWTClaimsSet();
+        } catch (ParseException e) {
+            throw SeedException.wrap(e, OAuthErrorCode.INVALID_TOKEN);
+        }
         this.nonce = nonce;
     }
 
     @Override
-    public Object getPrincipal() {
+    public String getPrincipal() {
+        return jwtClaimsSet.getSubject();
+    }
+
+    @Override
+    public String getIdToken() {
+        return idToken.serialize();
+    }
+
+    @Override
+    public Map<String, Object> getIdClaims() {
+        return jwtClaimsSet.toJSONObject();
+    }
+
+    @Override
+    public String toString() {
+        return "OidcAuthenticationToken[" + getPrincipal() + "]";
+    }
+
+    /**
+     * @return the id token as a JWT object.
+     */
+    JWT getJWTIdToken() {
         return idToken;
     }
 
@@ -47,21 +78,5 @@ public class OidcAuthenticationTokenImpl extends OAuthAuthenticationTokenImpl im
      */
     Nonce getNonce() {
         return nonce;
-    }
-
-    /**
-     * Returns a textual representation of the authentication token. The access token is omitted for security
-     * purposes. The identity is extracted from the subject (sub) claim but SHOULD NOT BE TRUSTED as the id token may
-     * NOT be validated at this stage.
-     *
-     * @return the textual representation as {@link String}.
-     */
-    @Override
-    public String toString() {
-        try {
-            return "OAuthAuthenticationToken[" + idToken.getJWTClaimsSet().getSubject() + "]";
-        } catch (ParseException e) {
-            return "OAuthAuthenticationToken[invalid]";
-        }
     }
 }

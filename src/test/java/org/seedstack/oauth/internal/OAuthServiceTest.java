@@ -21,11 +21,11 @@ import org.powermock.reflect.Whitebox;
 import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.fixtures.MockedManualOAuthProvider;
 import org.seedstack.oauth.fixtures.TestAccessTokenValidator;
-import org.seedstack.oauth.spi.AccessTokenValidator;
-import org.seedstack.oauth.spi.OAuthAuthenticationToken;
-import org.seedstack.oauth.spi.OAuthProvider;
-import org.seedstack.oauth.spi.OAuthService;
-import org.seedstack.oauth.spi.TokenValidationException;
+import org.seedstack.oauth.AccessTokenValidator;
+import org.seedstack.oauth.OAuthAuthenticationToken;
+import org.seedstack.oauth.OAuthProvider;
+import org.seedstack.oauth.OAuthService;
+import org.seedstack.oauth.TokenValidationException;
 
 import javax.inject.Provider;
 import java.net.URI;

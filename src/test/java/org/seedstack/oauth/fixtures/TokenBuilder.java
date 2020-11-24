@@ -33,12 +33,12 @@ import java.util.List;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class TokenBuilder {
-    private static final String ACCESS_TOKEN_VALUE =
+    public static final String ACCESS_TOKEN_VALUE =
             "ya29.Gl0OBRawZls_r7atLBziIl051NW1xWZTp96JbPyuz8g09Ty0QvavJaQzBMtpclRxDxgq2b3pdQbUFCDaRq-qIJ7Qsw_KQmYMhxxczJsXP7DqMkiQf7CvOsZhwQkqpfE";
+    public static final String SUBJECT_ID = "118090614001964330293";
     private static final String TOKEN_TYPE = "Bearer";
     private static final int TOKEN_EXPIRES_IN = 3563;
     private static final String RSA_KEY_ID = "5ef69cb85daeef24c4791e20553af176fd216e68";
-    public static final String SUBJECT_ID = "118090614001964330293";
     private String clientID = "";
     private boolean testInvalidNonce;
     private boolean testTokenExpiry;
