@@ -197,7 +197,7 @@ From there you have two options:
 
 All configuration options are described below:
 
-{{< config p="security.oauth" >}}
+{{% config p="security.oauth" %}}
 ```yaml
 security:
   oauth:
@@ -229,13 +229,13 @@ security:
       plainTokenAllowed: (boolean)
 
     # Redirection URI when configured for authorization code flow
-	redirect: (Absolute url in String format)
+    redirect: (Absolute url in String format)
 
-	# Client identifier when the application acts as OAuth/OpenIdConnect client
+    # Client identifier when the application acts as OAuth/OpenIdConnect client
     clientId: (String)
-	# Client secret when the application acts as OAuth/OpenIdConnect client
+    # Client secret when the application acts as OAuth/OpenIdConnect client
     clientSecret: (String)
-	# Requested scopes when the application acts as OAuth/OpenIdConnect client
+    # Requested scopes when the application acts as OAuth/OpenIdConnect client
     scopes: (List of comma separated String values)
   
     # Required claims in the access token (["sub"] by default)
@@ -251,11 +251,41 @@ security:
     accessTokenValidator: (Class<? extends AccessTokenValidator>)
     # If true, the user info endpoint will be requested if it is configured to enrich principals with subject personal claims (false by default)
     autoFetchUserInfo: (boolean)
-    # If true, the scopes will be treated as direct subject permissions instead of SeedStack roles (false by default)
-    treatScopesAsPermissions: (boolean)
+    # If true, the scopes will be treated as realm roles instead of direct subject permissions roles (false by default)
+    treatScopesAsRoles: (boolean)
 ```
-{{< /config >}}  
+{{% /config %}}  
 
 # Examples
 
 Working examples for the three common scenarios described in this page are available at https://github.com/seedstack/samples/tree/master/addons/oauth.
+
+# Advanced configuration
+
+## Scopes interpretation
+
+By default the add-on will treat OAuth scopes as subject permission (like `order:refund`, `product:edit`, ...). While this is the obvious interpretation of the OAuth protocol, it bypasses the usual SeedStack roles/permissions mapping mechanism. If you want to use this mechanism, set the `treatScopesAsRoles` option to `true`:
+
+```yaml
+oauth:
+    treatScopesAsRoles: true
+```
+
+Scopes will then be used as realm roles that can be [mapped to applicative roles]({{< ref "docs/core/security.md#role-mapper" >}}), which in turn can be [resolved to permissions]({{< ref "docs/core/security.md#permission-resolver" >}}).
+
+## Audiences
+
+It is good practice to only allow OAuth tokens that are intended for your application or API. In that spirit, the token validation mechanism has a default audience check: it will only allow tokens that have an `aud` containing the application identifier (`application.id` config option). You cannot always make the application id match the `aud` claim, so you can override the allowed audiences like this:
+
+```yaml
+oauth:
+    allowedAudiences: [ 'myAudience' ]
+```
+
+If you want to allow tokens without audience, add a null to the set of allowed audiences:
+
+```yaml
+oauth:
+    allowedAudiences: [ ~ ]
+```
+
