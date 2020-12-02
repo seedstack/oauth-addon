@@ -256,13 +256,13 @@ security:
 ```
 {{% /config %}}  
 
-# Examples
+## Examples
 
 Working examples for the three common scenarios described in this page are available at https://github.com/seedstack/samples/tree/master/addons/oauth.
 
-# Advanced configuration
+## Advanced configuration
 
-## Scopes interpretation
+### Scopes interpretation
 
 By default the add-on will treat OAuth scopes as subject permission (like `order:refund`, `product:edit`, ...). While this is the obvious interpretation of the OAuth protocol, it bypasses the usual SeedStack roles/permissions mapping mechanism. If you want to use this mechanism, set the `treatScopesAsRoles` option to `true`:
 
@@ -273,7 +273,7 @@ oauth:
 
 Scopes will then be used as realm roles that can be [mapped to applicative roles]({{< ref "docs/core/security.md#role-mapper" >}}), which in turn can be [resolved to permissions]({{< ref "docs/core/security.md#permission-resolver" >}}).
 
-## Audiences
+### Audiences
 
 It is good practice to only allow OAuth tokens that are intended for your application or API. In that spirit, the token validation mechanism has a default audience check: it will only allow tokens that have an `aud` containing the application identifier (`application.id` config option). You cannot always make the application id match the `aud` claim, so you can override the allowed audiences like this:
 
