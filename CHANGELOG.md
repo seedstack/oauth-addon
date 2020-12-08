@@ -1,3 +1,7 @@
+# Version 3.0.1 (2020-12-15)
+
+* [chg] Better token validation error messages.
+
 # Version 3.0.0 (2020-11-23)
 
 * [brk] Moved everything under the `org.seedstack.oauth.spi` package to `org.seedstack.oauth`.

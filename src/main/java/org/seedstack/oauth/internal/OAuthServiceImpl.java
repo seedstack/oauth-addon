@@ -168,7 +168,7 @@ public class OAuthServiceImpl implements OAuthService {
                 com.nimbusds.openid.connect.sdk.validators.AccessTokenValidator
                         .validate(accessToken, (JWSAlgorithm) algorithm, accessTokenHash);
             } catch (InvalidHashException e) {
-                throw new TokenValidationException("Failed to validate access token", e);
+                throw new TokenValidationException("Failed to validate access token: " + e.getMessage(), e);
             }
         }
 
@@ -198,7 +198,7 @@ public class OAuthServiceImpl implements OAuthService {
                 JWSKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(expectedAlg, keySource);
                 jwtProcessor.setJWSKeySelector(keySelector);
             } catch (MalformedURLException e) {
-                throw new TokenValidationException("Invalid JWKS endpoint: " + jwksEndpoint);
+                throw new TokenValidationException("Invalid JWKS endpoint: " + e.getMessage());
             }
         });
 
@@ -246,7 +246,7 @@ public class OAuthServiceImpl implements OAuthService {
 
     private IDTokenClaimsSet validateIdToken(JWT token, Nonce nonce) {
         Issuer expectedIssuer = new Issuer(oauthProvider.getIssuer()
-                .orElseThrow(() -> new TokenValidationException("Missing issuer")));
+                .orElseThrow(() -> new TokenValidationException("No issuer configured")));
         ClientID clientId = new ClientID(oauthConfig.getClientId());
 
         // Validate token
@@ -254,14 +254,14 @@ public class OAuthServiceImpl implements OAuthService {
         try {
             claims = createIdTokenValidator(expectedIssuer, clientId, token).validate(token, nonce);
         } catch (BadJOSEException | JOSEException e) {
-            throw new TokenValidationException("Failed to validate ID token", e);
+            throw new TokenValidationException("Failed to validate ID token: " + e.getMessage(), e);
         }
 
         // Verify claims
         try {
             createIdClaimsVerifier(expectedIssuer, clientId, nonce).verify(claims.toJWTClaimsSet(), null);
         } catch (BadJOSEException | ParseException e) {
-            throw new TokenValidationException("Failed to verify ID token claims", e);
+            throw new TokenValidationException("Failed to verify ID token claims: " + e.getMessage(), e);
         }
 
         // Check the token audience
@@ -296,7 +296,7 @@ public class OAuthServiceImpl implements OAuthService {
                             .getJwksEndpoint()
                             .orElseThrow(() -> new TokenValidationException("Missing JWKS endpoint URI")).toURL();
                 } catch (MalformedURLException e) {
-                    throw new TokenValidationException("JWKS URI is not a well-formed URL", e);
+                    throw new TokenValidationException("JWKS URI is not a well-formed URL: " + e.getMessage(), e);
                 }
 
                 return new IDTokenValidator(expectedIssuer, clientId, expectedAlgorithm, jwkSetURL);
