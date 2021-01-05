@@ -10,10 +10,10 @@ package org.seedstack.oauth.internal;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import org.seedstack.seed.security.principals.PrincipalProvider;
 
-public class UserInfoPrincipalProvider implements PrincipalProvider<UserInfo> {
+class UserInfoPrincipalProvider implements PrincipalProvider<UserInfo> {
     private final UserInfo userInfo;
 
-    public UserInfoPrincipalProvider(UserInfo userInfo) {
+    UserInfoPrincipalProvider(UserInfo userInfo) {
         this.userInfo = userInfo;
     }
 

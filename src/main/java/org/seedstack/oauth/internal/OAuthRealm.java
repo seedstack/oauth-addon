@@ -10,18 +10,11 @@ package org.seedstack.oauth.internal;
 import com.google.common.base.Strings;
 import com.nimbusds.oauth2.sdk.Scope;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
+import com.nimbusds.openid.connect.sdk.claims.PersonClaims;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
-import org.seedstack.oauth.OAuthAuthenticationToken;
-import org.seedstack.oauth.OAuthConfig;
-import org.seedstack.oauth.OAuthService;
-import org.seedstack.oauth.TokenValidationResult;
+import org.seedstack.oauth.*;
 import org.seedstack.seed.Configuration;
-import org.seedstack.seed.security.AuthenticationException;
-import org.seedstack.seed.security.AuthenticationInfo;
-import org.seedstack.seed.security.AuthenticationToken;
-import org.seedstack.seed.security.Realm;
-import org.seedstack.seed.security.RoleMapping;
-import org.seedstack.seed.security.RolePermissionResolver;
+import org.seedstack.seed.security.*;
 import org.seedstack.seed.security.principals.PrincipalProvider;
 import org.seedstack.seed.security.principals.Principals;
 import org.seedstack.seed.security.principals.SimplePrincipalProvider;
@@ -53,7 +46,7 @@ public class OAuthRealm implements Realm {
             Set<String> result = scopesToStrings(otherPrincipals);
             String additionalPermissionsClaim = oAuthConfig.getAdditionalPermissionsClaim();
             if (!Strings.isNullOrEmpty(additionalPermissionsClaim)) {
-                result.addAll(claimToStrings(otherPrincipals, additionalPermissionsClaim));
+                result.addAll(accessClaimToStrings(otherPrincipals, additionalPermissionsClaim));
             }
             return result;
         }
@@ -65,7 +58,7 @@ public class OAuthRealm implements Realm {
             Set<String> result = scopesToStrings(otherPrincipals);
             String additionalRolesClaim = oAuthConfig.getAdditionalRolesClaim();
             if (!Strings.isNullOrEmpty(additionalRolesClaim)) {
-                result.addAll(claimToStrings(otherPrincipals, additionalRolesClaim));
+                result.addAll(accessClaimToStrings(otherPrincipals, additionalRolesClaim));
             }
             return result;
         } else {
@@ -101,25 +94,28 @@ public class OAuthRealm implements Realm {
             AuthenticationInfo authenticationInfo = new AuthenticationInfo(subjectId, accessToken);
             Collection<PrincipalProvider<?>> otherPrincipals = authenticationInfo.getOtherPrincipals();
 
-            // Put all claims as simple principals
+            // Put id claims as simple principals
             claims.forEach((name, value) -> otherPrincipals.add(new SimplePrincipalProvider(name, String.valueOf(value))));
 
-            // Convert some claims to SeedStack standard principals
+            // Convert some id claims to SeedStack standard principals
             toSimplePrincipal(subjectId, Principals.IDENTITY).ifPresent(otherPrincipals::add);
-            toSimplePrincipal(claims.get(UserInfo.GIVEN_NAME_CLAIM_NAME), Principals.FIRST_NAME).ifPresent(otherPrincipals::add);
-            toSimplePrincipal(claims.get(UserInfo.FAMILY_NAME_CLAIM_NAME), Principals.LAST_NAME).ifPresent(otherPrincipals::add);
-            toSimplePrincipal(claims.get(UserInfo.NAME_CLAIM_NAME), Principals.FULL_NAME).ifPresent(otherPrincipals::add);
-            toSimplePrincipal(claims.get(UserInfo.LOCALE_CLAIM_NAME), Principals.LOCALE).ifPresent(otherPrincipals::add);
+            toSimplePrincipal(claims.get(PersonClaims.GIVEN_NAME_CLAIM_NAME), Principals.FIRST_NAME).ifPresent(otherPrincipals::add);
+            toSimplePrincipal(claims.get(PersonClaims.FAMILY_NAME_CLAIM_NAME), Principals.LAST_NAME).ifPresent(otherPrincipals::add);
+            toSimplePrincipal(claims.get(PersonClaims.NAME_CLAIM_NAME), Principals.FULL_NAME).ifPresent(otherPrincipals::add);
+            toSimplePrincipal(claims.get(PersonClaims.LOCALE_CLAIM_NAME), Principals.LOCALE).ifPresent(otherPrincipals::add);
 
-            // Put userInfo as principal if exists
+            // Put raw userInfo as principal if exists
             if (userInfo != null) {
                 otherPrincipals.add(new UserInfoPrincipalProvider(userInfo));
             }
 
+            // Put access claims as principal
+            otherPrincipals.add(new AccessClaimsPrincipalProvider(result.getAccessClaims()));
+
             // Put tokens as principal
             otherPrincipals.add(new TokenPrincipalProvider(result.getToken()));
 
-            // Scope as principal (internal principal for role/permission extraction)
+            // Scope as principal
             otherPrincipals.add(new ScopePrincipalProvider(new Scope(result.getScopes().toArray(new String[0]))));
 
             return authenticationInfo;
@@ -158,9 +154,11 @@ public class OAuthRealm implements Realm {
                 .orElse(new HashSet<>());
     }
 
-    private Set<String> claimToStrings(Collection<PrincipalProvider<?>> otherPrincipals, String claim) {
-        return Optional.ofNullable(Principals.getSimplePrincipalByName(otherPrincipals, claim))
+    private Set<String> accessClaimToStrings(Collection<PrincipalProvider<?>> otherPrincipals, String claim) {
+        return Optional.ofNullable(Principals.getOnePrincipalByType(otherPrincipals, AccessClaims.class))
                 .map(PrincipalProvider::get)
+                .map(accessClaims -> accessClaims.get(claim))
+                .map(String::valueOf)
                 .map(s -> s.split(" "))
                 .map(Arrays::asList)
                 .map(HashSet::new)

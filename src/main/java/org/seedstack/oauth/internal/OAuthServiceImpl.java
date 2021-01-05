@@ -127,6 +127,7 @@ public class OAuthServiceImpl implements OAuthService {
                     idClaimSet.getSubject().getValue(),
                     extractScope(claimsSet),
                     new HashMap<>(idClaimSet.toJSONObject()),
+                    new HashMap<>(claimsSet.toJSONObject()),
                     authenticationToken);
         } else {
             // Validate access token
@@ -135,10 +136,10 @@ public class OAuthServiceImpl implements OAuthService {
                     JWSAlgorithm.parse(oauthConfig.algorithms().getAccessSigningAlgorithm()),
                     null);
 
-            // User info-based principals if automatic fetching is configured
             return new TokenValidationResult(
                     Optional.ofNullable(claimsSet.getSubject()).orElse(""),
                     extractScope(claimsSet),
+                    new HashMap<>(),
                     new HashMap<>(claimsSet.toJSONObject()),
                     authenticationToken);
         }
