@@ -43,6 +43,8 @@ public class OAuthConfig {
     private Class<? extends AccessTokenValidator> accessTokenValidator = UserInfoAccessTokenValidator.class;
     private boolean autoFetchUserInfo = false;
     private boolean treatScopesAsRoles = false;
+    private String additionalRolesClaim;
+    private String additionalPermissionsClaim;
 
     public ProviderConfig provider() {
         return provider;
@@ -180,6 +182,24 @@ public class OAuthConfig {
 
     public OAuthConfig setTreatScopesAsRoles(boolean treatScopesAsRoles) {
         this.treatScopesAsRoles = treatScopesAsRoles;
+        return this;
+    }
+
+    public String getAdditionalRolesClaim() {
+        return additionalRolesClaim;
+    }
+
+    public OAuthConfig setAdditionalRolesClaim(String additionalRolesClaim) {
+        this.additionalRolesClaim = additionalRolesClaim;
+        return this;
+    }
+
+    public String getAdditionalPermissionsClaim() {
+        return additionalPermissionsClaim;
+    }
+
+    public OAuthConfig setAdditionalPermissionsClaim(String additionalPermissionsClaim) {
+        this.additionalPermissionsClaim = additionalPermissionsClaim;
         return this;
     }
 

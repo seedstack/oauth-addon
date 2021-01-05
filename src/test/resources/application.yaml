@@ -28,6 +28,8 @@ security:
     clientSecret: testClientSecret
     scopes: [email, openid]
     accessTokenValidator: org.seedstack.oauth.fixtures.TestAccessTokenValidator
+    additionalRolesClaim: roles
+    additionalPermissionsClaim: perms
     provider:
       authorization: ${runtime.web.baseUrl}/api/provider/authorize
       token: ${runtime.web.baseUrl}/api/provider/create-token

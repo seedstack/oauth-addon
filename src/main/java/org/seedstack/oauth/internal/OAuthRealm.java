@@ -7,6 +7,7 @@
  */
 package org.seedstack.oauth.internal;
 
+import com.google.common.base.Strings;
 import com.nimbusds.oauth2.sdk.Scope;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
@@ -29,12 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 public class OAuthRealm implements Realm {
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuthRealm.class);
@@ -54,15 +50,24 @@ public class OAuthRealm implements Realm {
         if (oAuthConfig.isTreatScopesAsRoles()) {
             return new HashSet<>();
         } else {
-            return scopesToStringList(otherPrincipals);
+            Set<String> result = scopesToStrings(otherPrincipals);
+            String additionalPermissionsClaim = oAuthConfig.getAdditionalPermissionsClaim();
+            if (!Strings.isNullOrEmpty(additionalPermissionsClaim)) {
+                result.addAll(claimToStrings(otherPrincipals, additionalPermissionsClaim));
+            }
+            return result;
         }
     }
 
     @Override
-    public Set<String> getRealmRoles(PrincipalProvider<?> identityPrincipal,
-                                     Collection<PrincipalProvider<?>> otherPrincipals) {
+    public Set<String> getRealmRoles(PrincipalProvider<?> identityPrincipal, Collection<PrincipalProvider<?>> otherPrincipals) {
         if (oAuthConfig.isTreatScopesAsRoles()) {
-            return scopesToStringList(otherPrincipals);
+            Set<String> result = scopesToStrings(otherPrincipals);
+            String additionalRolesClaim = oAuthConfig.getAdditionalRolesClaim();
+            if (!Strings.isNullOrEmpty(additionalRolesClaim)) {
+                result.addAll(claimToStrings(otherPrincipals, additionalRolesClaim));
+            }
+            return result;
         } else {
             return new HashSet<>();
         }
@@ -145,10 +150,19 @@ public class OAuthRealm implements Realm {
         return OAuthAuthenticationTokenImpl.class;
     }
 
-    private HashSet<String> scopesToStringList(Collection<PrincipalProvider<?>> otherPrincipals) {
+    private Set<String> scopesToStrings(Collection<PrincipalProvider<?>> otherPrincipals) {
         return Optional.ofNullable(Principals.getOnePrincipalByType(otherPrincipals, Scope.class))
                 .map(PrincipalProvider::get)
                 .map(Scope::toStringList)
+                .map(HashSet::new)
+                .orElse(new HashSet<>());
+    }
+
+    private Set<String> claimToStrings(Collection<PrincipalProvider<?>> otherPrincipals, String claim) {
+        return Optional.ofNullable(Principals.getSimplePrincipalByName(otherPrincipals, claim))
+                .map(PrincipalProvider::get)
+                .map(s -> s.split(" "))
+                .map(Arrays::asList)
                 .map(HashSet::new)
                 .orElse(new HashSet<>());
     }

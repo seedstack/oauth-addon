@@ -1,3 +1,9 @@
+# Version 3.1.0 (2021-01-05)
+
+* [new] Config option `additionalRolesClaim` enable gathering additional roles from a custom claim.
+* [new] Config option `additionalPermissionsClaim` enable gathering additional permissions from a custom claim.
+
+
 # Version 3.0.1 (2020-12-15)
 
 * [chg] Better token validation error messages.
