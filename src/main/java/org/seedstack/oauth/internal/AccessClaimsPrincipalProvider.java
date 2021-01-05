@@ -26,6 +26,8 @@ class AccessClaimsPrincipalProvider implements PrincipalProvider<AccessClaims> {
     }
 
     private static class InternalAccessClaims extends HashMap<String, Object> implements AccessClaims {
+        private static final long serialVersionUID = 1L;
+
         private InternalAccessClaims(Map<String, Object> accessClaims) {
             super(accessClaims);
         }
