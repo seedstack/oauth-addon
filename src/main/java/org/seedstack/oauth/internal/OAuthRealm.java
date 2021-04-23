@@ -25,6 +25,8 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.*;
 
+import net.minidev.json.JSONArray;
+
 public class OAuthRealm implements Realm {
     private static final Logger LOGGER = LoggerFactory.getLogger(OAuthRealm.class);
     @Configuration
@@ -158,10 +160,23 @@ public class OAuthRealm implements Realm {
         return Optional.ofNullable(Principals.getOnePrincipalByType(otherPrincipals, AccessClaims.class))
                 .map(PrincipalProvider::get)
                 .map(accessClaims -> accessClaims.get(claim))
+                .map(claimObj -> {//changes done to handle users with multiple roles in the form of a JSONArray Jira - IDVS - 10752
+                    StringBuilder claimsStr = new StringBuilder("");
+                    if (claimObj instanceof JSONArray) {
+                        JSONArray array = (JSONArray) claimObj;
+                        for (int i = 0; i < array.size(); i++) {
+                            claimsStr = claimsStr.append(array.get(i).toString()).append(" ");
+                        }
+                        return claimsStr.toString();
+                    }
+                    return claimObj;
+
+                })
                 .map(String::valueOf)
                 .map(s -> s.split(" "))
                 .map(Arrays::asList)
                 .map(HashSet::new)
                 .orElse(new HashSet<>());
+
     }
 }
