@@ -35,7 +35,7 @@ security:
       token: ${runtime.web.baseUrl}/api/provider/create-token
       revocation: ${runtime.web.baseUrl}/api/provider/token/revoke
       issuer: https://mockedserver.com
-      jwks: ${runtime.web.baseUrl}/jwkSet.json
+      jwks: ${runtime.web.baseUrl}/JWKset.json
       userInfo: ${runtime.web.baseUrl}/api/provider/userInfo
 
 security<noProvider>:
