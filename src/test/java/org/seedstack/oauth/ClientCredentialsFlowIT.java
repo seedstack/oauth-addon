@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013-2020, The SeedStack authors <http://seedstack.org>
+ * Copyright © 2013-2021, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -62,6 +62,21 @@ public class ClientCredentialsFlowIT {
 
     @Test
     public void accessUserInfo() {
+        OAuthAuthenticationToken token = oauthService.requestTokensWithClientCredentials(Lists.newArrayList("openid"));
+        securitySupport.login(token);
+
+        assertThat(securitySupport.getSimplePrincipalByName(Principals.FIRST_NAME).get()).isEqualTo("Jyoti");
+        assertThat(securitySupport.getSimplePrincipalByName(Principals.LAST_NAME).get()).isEqualTo("Athalye");
+        assertThat(securitySupport.getPrincipalByType(OAuthAuthenticationToken.class).get().getAccessToken()).isEqualTo(TokenBuilder.ACCESS_TOKEN_VALUE);
+        assertThat(securitySupport.getPrincipalByType(UserInfo.class).get().getSubject().getValue()).isEqualTo(TokenBuilder.SUBJECT_ID);
+        assertThat(securitySupport.getPrincipalByType(UserInfo.class).get().getFamilyName()).isEqualTo("Athalye");
+        assertThat(securitySupport.getPrincipalByType(UserInfo.class).get().getGivenName()).isEqualTo("Jyoti");
+
+        securitySupport.logout();
+    }
+
+    @Test
+    public void checkRoles() {
         OAuthAuthenticationToken token = oauthService.requestTokensWithClientCredentials(Lists.newArrayList("openid"));
         securitySupport.login(token);
 

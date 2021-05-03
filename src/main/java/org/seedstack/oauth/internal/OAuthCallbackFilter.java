@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013-2020, The SeedStack authors <http://seedstack.org>
+ * Copyright © 2013-2021, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,12 +7,7 @@
  */
 package org.seedstack.oauth.internal;
 
-import com.nimbusds.oauth2.sdk.AuthorizationCode;
-import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
-import com.nimbusds.oauth2.sdk.AuthorizationResponse;
-import com.nimbusds.oauth2.sdk.AuthorizationSuccessResponse;
-import com.nimbusds.oauth2.sdk.ErrorResponse;
-import com.nimbusds.oauth2.sdk.ParseException;
+import com.nimbusds.oauth2.sdk.*;
 import com.nimbusds.oauth2.sdk.id.State;
 import com.nimbusds.openid.connect.sdk.Nonce;
 import org.apache.shiro.SecurityUtils;
@@ -34,20 +29,15 @@ import javax.inject.Inject;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.shiro.web.util.WebUtils.toHttp;
-import static org.seedstack.oauth.internal.OAuthUtils.buildGenericError;
-import static org.seedstack.oauth.internal.OAuthUtils.createScope;
-import static org.seedstack.oauth.internal.OAuthUtils.requestTokens;
-import static org.seedstack.oauth.internal.OAuthUtils.sendForbidden;
+import static org.seedstack.oauth.internal.OAuthUtils.*;
 
 @SecurityFilter("oauthCallback")
 public class OAuthCallbackFilter extends AuthenticatingFilter implements SessionRegeneratingFilter {
@@ -71,14 +61,24 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
                     createScope(oauthConfig.getScopes())
             );
         } catch (Exception e) {
-            sendForbidden(new AuthenticationException("Failed to request OAuth tokens: " + e.getMessage(), e), response);
-            return OAuthAuthenticationTokenImpl.EMPTY;
+            return OAuthAuthenticationTokenImpl.ERRORED.apply(new AuthenticationException(e));
         }
     }
 
     @Override
     protected boolean onAccessDenied(ServletRequest request, ServletResponse response) throws Exception {
-        return executeLogin(request, response);
+        boolean loggedIn = executeLogin(request, response);
+        if (!loggedIn) {
+            try {
+                ((HttpServletResponse) response).sendError(
+                        HttpServletResponse.SC_UNAUTHORIZED,
+                        OAuthUtils.formatUnauthorizedMessage(request, oauthConfig.isReturnUnauthorizedReason())
+                );
+            } catch (IOException e1) {
+                LOGGER.debug("Unable to send {} HTTP code to client", HttpServletResponse.SC_UNAUTHORIZED, e1);
+            }
+        }
+        return loggedIn;
     }
 
     @Override
@@ -89,10 +89,12 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
         return false;
     }
 
-    @Override
-    protected boolean onLoginFailure(AuthenticationToken token, AuthenticationException e, ServletRequest request,
-                                     ServletResponse response) {
-        sendForbidden(e, response);
+    protected boolean onLoginFailure(AuthenticationToken token, AuthenticationException e,
+                                     ServletRequest request, ServletResponse response) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Authentication exception", e);
+        }
+        request.setAttribute(OAuthUtils.LOGIN_FAILURE_REASON_KEY, e);
         return false;
     }
 

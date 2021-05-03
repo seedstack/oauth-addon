@@ -1,5 +1,5 @@
 #
-# Copyright © 2013-2020, The SeedStack authors <http://seedstack.org>
+# Copyright © 2013-2021, The SeedStack authors <http://seedstack.org>
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -23,7 +23,7 @@ security:
     - pattern: /api/**
       filters: oauth
   oauth:
-    redirect: ${runtime.web.baseUrl}/callback
+    redirect<authCode>: ${runtime.web.baseUrl}/callback
     clientId: testClientId
     clientSecret: testClientSecret
     scopes: [email, openid]
@@ -35,7 +35,7 @@ security:
       token: ${runtime.web.baseUrl}/api/provider/create-token
       revocation: ${runtime.web.baseUrl}/api/provider/token/revoke
       issuer: https://mockedserver.com
-      jwks: ${runtime.web.baseUrl}/JWKset.json
+      jwks: ${runtime.web.baseUrl}/jwkSet.json
       userInfo: ${runtime.web.baseUrl}/api/provider/userInfo
 
 security<noProvider>:

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013-2020, The SeedStack authors <http://seedstack.org>
+ * Copyright © 2013-2021, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -18,21 +18,18 @@ import org.seedstack.seed.security.*;
 import org.seedstack.seed.security.principals.PrincipalProvider;
 import org.seedstack.seed.security.principals.Principals;
 import org.seedstack.seed.security.principals.SimplePrincipalProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import java.lang.reflect.Array;
 import java.util.*;
-
-import net.minidev.json.JSONArray;
+import java.util.stream.Collectors;
 
 public class OAuthRealm implements Realm {
-    private static final Logger LOGGER = LoggerFactory.getLogger(OAuthRealm.class);
     @Configuration
     private OAuthConfig oAuthConfig;
     @Inject
-    private OAuthService oauthService;
+    private OAuthService oAuthService;
     @Inject
     @Named("OAuthRealm-role-mapping")
     private RoleMapping roleMapping;
@@ -42,46 +39,49 @@ public class OAuthRealm implements Realm {
 
     @Override
     public Set<String> getRealmPermissions(PrincipalProvider<?> identityPrincipal, Collection<PrincipalProvider<?>> otherPrincipals) {
-        if (oAuthConfig.isTreatScopesAsRoles()) {
-            return new HashSet<>();
-        } else {
-            Set<String> result = scopesToStrings(otherPrincipals);
-            String additionalPermissionsClaim = oAuthConfig.getAdditionalPermissionsClaim();
-            if (!Strings.isNullOrEmpty(additionalPermissionsClaim)) {
-                result.addAll(accessClaimToStrings(otherPrincipals, additionalPermissionsClaim));
-            }
-            return result;
+        Set<String> result = new HashSet<>();
+        if (!oAuthConfig.isTreatScopesAsRoles()) {
+            result.addAll(scopesToStrings(otherPrincipals));
         }
+        String additionalPermissionsClaim = oAuthConfig.getAdditionalPermissionsClaim();
+        if (!Strings.isNullOrEmpty(additionalPermissionsClaim)) {
+            result.addAll(accessClaimToStrings(otherPrincipals, additionalPermissionsClaim));
+        }
+        return result;
     }
 
     @Override
     public Set<String> getRealmRoles(PrincipalProvider<?> identityPrincipal, Collection<PrincipalProvider<?>> otherPrincipals) {
+        Set<String> result = new HashSet<>();
         if (oAuthConfig.isTreatScopesAsRoles()) {
-            Set<String> result = scopesToStrings(otherPrincipals);
-            String additionalRolesClaim = oAuthConfig.getAdditionalRolesClaim();
-            if (!Strings.isNullOrEmpty(additionalRolesClaim)) {
-                result.addAll(accessClaimToStrings(otherPrincipals, additionalRolesClaim));
-            }
-            return result;
-        } else {
-            return new HashSet<>();
+            result.addAll(scopesToStrings(otherPrincipals));
         }
+        String additionalRolesClaim = oAuthConfig.getAdditionalRolesClaim();
+        if (!Strings.isNullOrEmpty(additionalRolesClaim)) {
+            result.addAll(accessClaimToStrings(otherPrincipals, additionalRolesClaim));
+        }
+        return result;
     }
 
     @Override
     public AuthenticationInfo getAuthenticationInfo(AuthenticationToken authenticationToken) throws AuthenticationException {
         if (authenticationToken instanceof OAuthAuthenticationTokenImpl) {
+            if (((OAuthAuthenticationTokenImpl) authenticationToken).hasException()) {
+                // If the token is a placeholder for erroneous retrieval process, throw it immediately
+                throw ((OAuthAuthenticationTokenImpl) authenticationToken).getException();
+            }
+
             AccessToken accessToken = (AccessToken) authenticationToken.getCredentials();
 
             // Validate token and extract claims
-            TokenValidationResult result = oauthService.validate(((OAuthAuthenticationToken) authenticationToken));
+            TokenValidationResult result = oAuthService.validate(((OAuthAuthenticationToken) authenticationToken));
             Map<String, Object> claims = new HashMap<>(result.getClaims());
             String subjectId = result.getSubjectId();
             UserInfo userInfo = null;
 
             // Override/complete claims with userInfo if fetching is enabled
             if (oAuthConfig.isAutoFetchUserInfo()) {
-                Optional<UserInfo> optionalUserInfo = ((OAuthServiceImpl) oauthService).fetchUserInfo(accessToken.getValue());
+                Optional<UserInfo> optionalUserInfo = ((OAuthServiceImpl) oAuthService).fetchUserInfo(accessToken.getValue());
                 if (optionalUserInfo.isPresent()) {
                     userInfo = optionalUserInfo.get();
                     // If tokens didn't provide subject id, use userInfo one (always present)
@@ -160,23 +160,23 @@ public class OAuthRealm implements Realm {
         return Optional.ofNullable(Principals.getOnePrincipalByType(otherPrincipals, AccessClaims.class))
                 .map(PrincipalProvider::get)
                 .map(accessClaims -> accessClaims.get(claim))
-                .map(claimObj -> {//changes done to handle users with multiple roles in the form of a JSONArray Jira - IDVS - 10752
-                    StringBuilder claimsStr = new StringBuilder("");
-                    if (claimObj instanceof JSONArray) {
-                        JSONArray array = (JSONArray) claimObj;
-                        for (int i = 0; i < array.size(); i++) {
-                            claimsStr = claimsStr.append(array.get(i).toString()).append(" ");
+                .map(claimObj -> {
+                    if (claimObj.getClass().isArray()) {
+                        Set<String> res = new HashSet<>();
+                        for (int i = 0; i < Array.getLength(claimObj); i++) {
+                            res.add(String.valueOf(Array.get(claimObj, i)));
                         }
-                        return claimsStr.toString();
+                        return res;
+                    } else if (claimObj instanceof Collection) {
+                        return ((Collection<?>) claimObj).stream()
+                                .map(String::valueOf)
+                                .collect(Collectors.toSet());
+                    } else {
+                        Set<String> res = new HashSet<>();
+                        res.add(String.valueOf(claimObj));
+                        return res;
                     }
-                    return claimObj;
-
                 })
-                .map(String::valueOf)
-                .map(s -> s.split(" "))
-                .map(Arrays::asList)
-                .map(HashSet::new)
                 .orElse(new HashSet<>());
-
     }
 }

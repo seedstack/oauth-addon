@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013-2020, The SeedStack authors <http://seedstack.org>
+ * Copyright © 2013-2021, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,11 +7,7 @@
  */
 package org.seedstack.oauth.fixtures;
 
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.JWSSigner;
-import com.nimbusds.jose.PlainHeader;
+import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
@@ -55,7 +51,7 @@ public class TokenBuilder {
         td.setAccess_token(buildAccessToken());
         td.setExpires_in(TOKEN_EXPIRES_IN);
         td.setToken_type(TOKEN_TYPE);
-        td.setScope(scopes.toString());
+        td.setScope(String.join(" ", scopes));
         if (!buildOnlyAccessToken) {
             if (oauthConfig.algorithms().isPlainTokenAllowed()) {
                 td.setId_token(buildPlainJWT(nonce));
@@ -110,14 +106,16 @@ public class TokenBuilder {
         Long iat = System.currentTimeMillis();
         Long exp = (iat) + (3600 * 60);
 
-        if (testInvalidNonce) {
-            nonce = "TL2-yFCanqzoiVwOPxQwVHrf.invalid.nonce";
-        } else if (testInvalidAudience) {
+        if (testInvalidAudience) {
             clientID = "2344574985.incorrect.client";
-        } else if (testTokenExpiry) {
-            exp = iat;
         } else {
             clientID = oauthConfig.getClientId();
+        }
+        if (testInvalidNonce) {
+            nonce = "TL2-yFCanqzoiVwOPxQwVHrf.invalid.nonce";
+        }
+        if (testTokenExpiry) {
+            exp = iat;
         }
 
         return new JWTClaimsSet.Builder()
@@ -130,22 +128,24 @@ public class TokenBuilder {
                 .expirationTime(new Date(exp))
                 .claim("nonce", nonce)
                 .issueTime(new Date(iat))
-                .claim("email", "jr@gmail.com").build();
+                .claim("email", "jr@gmail.com")
+                .claim("array", new String[]{"item1", "item2", "item3"})
+                .build();
     }
 
-    public void setTestInvalidNonce(boolean testInvalidNonce) {
-        this.testInvalidNonce = testInvalidNonce;
-    }
+        public void setTestInvalidNonce ( boolean testInvalidNonce){
+            this.testInvalidNonce = testInvalidNonce;
+        }
 
-    public void setTestTokenExpiry(boolean testTokenExpiry) {
-        this.testTokenExpiry = testTokenExpiry;
-    }
+        public void setTestTokenExpiry ( boolean testTokenExpiry){
+            this.testTokenExpiry = testTokenExpiry;
+        }
 
-    public void setTestInvalidAudience(boolean testInvalidAudience) {
-        this.testInvalidAudience = testInvalidAudience;
-    }
+        public void setTestInvalidAudience ( boolean testInvalidAudience){
+            this.testInvalidAudience = testInvalidAudience;
+        }
 
-    public void setFlagForAccessToken(boolean buildOnlyAccessToken) {
-        this.buildOnlyAccessToken = buildOnlyAccessToken;
+        public void setFlagForAccessToken ( boolean buildOnlyAccessToken){
+            this.buildOnlyAccessToken = buildOnlyAccessToken;
+        }
     }
-}

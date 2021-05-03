@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013-2020, The SeedStack authors <http://seedstack.org>
+ * Copyright © 2013-2021, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -93,7 +93,7 @@ public class OAuthAuthenticationFilter extends AuthenticatingFilter implements S
                 try {
                     ((HttpServletResponse) response).sendError(
                             HttpServletResponse.SC_UNAUTHORIZED,
-                            "Unauthorized: missing or invalid access token"
+                            OAuthUtils.formatUnauthorizedMessage(request, oauthConfig.isReturnUnauthorizedReason())
                     );
                 } catch (IOException e1) {
                     LOGGER.debug("Unable to send {} HTTP code to client", HttpServletResponse.SC_UNAUTHORIZED, e1);
@@ -110,21 +110,12 @@ public class OAuthAuthenticationFilter extends AuthenticatingFilter implements S
         return true;
     }
 
-    @Override
-    protected boolean onLoginFailure(AuthenticationToken token, AuthenticationException e, ServletRequest request,
-                                     ServletResponse response) {
+    protected boolean onLoginFailure(AuthenticationToken token, AuthenticationException e,
+                                     ServletRequest request, ServletResponse response) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Authentication exception", e);
         }
-
-        try {
-            ((HttpServletResponse) response).sendError(
-                    HttpServletResponse.SC_FORBIDDEN,
-                    "Forbidden: " + e.getMessage()
-            );
-        } catch (IOException e1) {
-            LOGGER.debug("Unable to send {} HTTP code to client", HttpServletResponse.SC_FORBIDDEN, e1);
-        }
+        request.setAttribute(OAuthUtils.LOGIN_FAILURE_REASON_KEY, e);
         return false;
     }
 

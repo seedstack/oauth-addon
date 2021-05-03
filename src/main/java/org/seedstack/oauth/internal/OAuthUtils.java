@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013-2020, The SeedStack authors <http://seedstack.org>
+ * Copyright © 2013-2021, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -8,14 +8,7 @@
 package org.seedstack.oauth.internal;
 
 import com.google.common.base.Strings;
-import com.nimbusds.oauth2.sdk.AccessTokenResponse;
-import com.nimbusds.oauth2.sdk.AuthorizationGrant;
-import com.nimbusds.oauth2.sdk.ErrorObject;
-import com.nimbusds.oauth2.sdk.ErrorResponse;
-import com.nimbusds.oauth2.sdk.ParseException;
-import com.nimbusds.oauth2.sdk.Scope;
-import com.nimbusds.oauth2.sdk.TokenRequest;
-import com.nimbusds.oauth2.sdk.TokenResponse;
+import com.nimbusds.oauth2.sdk.*;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.http.HTTPResponse;
@@ -29,11 +22,8 @@ import org.seedstack.oauth.OAuthConfig;
 import org.seedstack.oauth.OAuthProvider;
 import org.seedstack.seed.SeedException;
 import org.seedstack.shed.exception.BaseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.ServletRequest;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -48,7 +38,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 final class OAuthUtils {
     public static final String OPENID_SCOPE = "openid";
-    private static final Logger LOGGER = LoggerFactory.getLogger(OAuthUtils.class);
+    public static final String LOGIN_FAILURE_REASON_KEY = "oauthLoginFailureReason";
 
     private OAuthUtils() {
         // no instantiation allowed
@@ -161,17 +151,14 @@ final class OAuthUtils {
         }
     }
 
-    static void sendForbidden(AuthenticationException e, ServletResponse response) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Authentication exception", e);
-        }
-        try {
-            if (!response.isCommitted()) {
-                ((HttpServletResponse) response).sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage());
+    static String formatUnauthorizedMessage(ServletRequest request, boolean includeDetails) {
+        String msg = "Unauthorized: missing or invalid access token";
+        if (includeDetails) {
+            Object exc = request.getAttribute(LOGIN_FAILURE_REASON_KEY);
+            if (exc instanceof AuthenticationException) {
+                msg += ": " + ((AuthenticationException) exc).getMessage();
             }
-        } catch (IOException | ClassCastException | IllegalStateException e1) {
-            e1.initCause(e);
-            LOGGER.warn("Unable to send 403 HTTP code to client", e1);
         }
+        return msg;
     }
 }

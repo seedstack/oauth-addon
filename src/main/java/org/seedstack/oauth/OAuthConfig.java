@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013-2020, The SeedStack authors <http://seedstack.org>
+ * Copyright © 2013-2021, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -45,6 +45,7 @@ public class OAuthConfig {
     private boolean treatScopesAsRoles = false;
     private String additionalRolesClaim;
     private String additionalPermissionsClaim;
+    private boolean returnUnauthorizedReason = true;
 
     public ProviderConfig provider() {
         return provider;
@@ -200,6 +201,15 @@ public class OAuthConfig {
 
     public OAuthConfig setAdditionalPermissionsClaim(String additionalPermissionsClaim) {
         this.additionalPermissionsClaim = additionalPermissionsClaim;
+        return this;
+    }
+
+    public boolean isReturnUnauthorizedReason() {
+        return returnUnauthorizedReason;
+    }
+
+    public OAuthConfig setReturnUnauthorizedReason(boolean returnUnauthorizedReason) {
+        this.returnUnauthorizedReason = returnUnauthorizedReason;
         return this;
     }
 

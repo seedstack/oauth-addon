@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013-2020, The SeedStack authors <http://seedstack.org>
+ * Copyright © 2013-2021, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -16,12 +16,7 @@ import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jose.proc.JWSKeySelector;
 import com.nimbusds.jose.proc.JWSVerificationKeySelector;
 import com.nimbusds.jose.proc.SecurityContext;
-import com.nimbusds.jwt.EncryptedJWT;
-import com.nimbusds.jwt.JWT;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.JWTParser;
-import com.nimbusds.jwt.PlainJWT;
-import com.nimbusds.jwt.SignedJWT;
+import com.nimbusds.jwt.*;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
@@ -45,14 +40,9 @@ import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenClaimsVerifier;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import com.nimbusds.openid.connect.sdk.validators.InvalidHashException;
+import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
-import org.seedstack.oauth.AccessTokenValidator;
-import org.seedstack.oauth.OAuthAuthenticationToken;
-import org.seedstack.oauth.OAuthConfig;
-import org.seedstack.oauth.OAuthProvider;
-import org.seedstack.oauth.OAuthService;
-import org.seedstack.oauth.TokenValidationException;
-import org.seedstack.oauth.TokenValidationResult;
+import org.seedstack.oauth.*;
 import org.seedstack.seed.Application;
 import org.seedstack.seed.Configuration;
 import org.seedstack.seed.security.AuthenticationException;
@@ -65,12 +55,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.seedstack.oauth.internal.OAuthUtils.createScope;
@@ -126,8 +111,8 @@ public class OAuthServiceImpl implements OAuthService {
             return new TokenValidationResult(
                     idClaimSet.getSubject().getValue(),
                     extractScope(claimsSet),
-                    new HashMap<>(idClaimSet.toJSONObject()),
-                    new HashMap<>(claimsSet.toJSONObject()),
+                    convertClaims(idClaimSet.toJSONObject()),
+                    convertClaims(claimsSet.toJSONObject()),
                     authenticationToken);
         } else {
             // Validate access token
@@ -140,7 +125,7 @@ public class OAuthServiceImpl implements OAuthService {
                     Optional.ofNullable(claimsSet.getSubject()).orElse(""),
                     extractScope(claimsSet),
                     new HashMap<>(),
-                    new HashMap<>(claimsSet.toJSONObject()),
+                    convertClaims(claimsSet.toJSONObject()),
                     authenticationToken);
         }
     }
@@ -242,7 +227,7 @@ public class OAuthServiceImpl implements OAuthService {
         } else {
             throw new TokenValidationException("No access token validator configured");
         }
-        return new JWTClaimsSet.Builder().build();
+        return new JWTClaimsSet.Builder().build(); // TODO: build claimset from validator return value
     }
 
     private IDTokenClaimsSet validateIdToken(JWT token, Nonce nonce) {
@@ -333,5 +318,21 @@ public class OAuthServiceImpl implements OAuthService {
             }
         }
         return Optional.empty();
+    }
+
+    private <T> T convertClaims(T source) {
+        if (source instanceof Map) {
+            Map<Object, Object> copy = new HashMap<>();
+            ((Map<?, ?>) source).forEach((k, v) -> copy.put(k, convertClaims(v)));
+            return (T) copy;
+        } else if (source instanceof JSONArray) {
+            Object[] copy = new Object[((JSONArray) source).size()];
+            for (int i = 0; i < ((JSONArray) source).size(); i++) {
+                copy[i] = convertClaims(((JSONArray) source).get(i));
+            }
+            return (T) copy;
+        } else {
+            return source;
+        }
     }
 }

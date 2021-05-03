@@ -1,4 +1,9 @@
-# Version 3.1.0 (2021-01-05)
+# Version 3.2.0 (2021-05-05)
+
+* [fix] Properly process array claims for roles and permissions additional claims.
+* [chg] Additional roles or permissions claims are now processed regardless of the `treatScopeAsRoles` config value.
+
+# Version 3.1.0 (2021-01-06)
 
 * [new] Config option `additionalRolesClaim` enable gathering additional roles from a custom claim.
 * [new] Config option `additionalPermissionsClaim` enable gathering additional permissions from a custom claim.

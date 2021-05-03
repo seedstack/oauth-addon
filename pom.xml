@@ -1,6 +1,6 @@
 <!--
 
-    Copyright © 2013-2020, The SeedStack authors <http://seedstack.org>
+    Copyright © 2013-2021, The SeedStack authors <http://seedstack.org>
 
     This Source Code Form is subject to the terms of the Mozilla Public
     License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -14,16 +14,16 @@
     <parent>
         <groupId>org.seedstack.poms</groupId>
         <artifactId>parent-internal</artifactId>
-        <version>3.4.10</version>
+        <version>4.0.0-SNAPSHOT</version>
     </parent>
 
     <groupId>org.seedstack.addons.oauth</groupId>
     <artifactId>oauth</artifactId>
-    <version>3.1.0-SNAPSHOT</version>
+    <version>3.2.0-SNAPSHOT</version>
 
     <properties>
-        <seed.version>3.11.0</seed.version>
-        <oauth2-oidc-sdk.version>8.25</oauth2-oidc-sdk.version>
+        <seed.version>3.12.0-SNAPSHOT</seed.version>
+        <oauth2-oidc-sdk.version>9.5</oauth2-oidc-sdk.version>
         <compatibility.skip>true</compatibility.skip>
 
         <bintray.package>oauth-addon</bintray.package>
@@ -60,6 +60,8 @@
                             <licenseMerge>Apache 2|Apache 2.0</licenseMerge>
                             <licenseMerge>BSD|The New BSD License</licenseMerge>
                             <licenseMerge>BSD|BSD License</licenseMerge>
+                            <licenseMerge>BSD|The BSD 3-Clause License</licenseMerge>
+                            <licenseMerge>BSD|BSD-3-Clause</licenseMerge>
                             <licenseMerge>CDDL|GPLv2+CE</licenseMerge>
                             <licenseMerge>CDDL|CDDL/GPLv2+CE</licenseMerge>
                             <licenseMerge>CDDL|Common Development and Distribution License (CDDL) v1.0</licenseMerge>
@@ -107,19 +109,6 @@
             <groupId>com.nimbusds</groupId>
             <artifactId>oauth2-oidc-sdk</artifactId>
             <version>${oauth2-oidc-sdk.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>net.minidev</groupId>
-                    <artifactId>json-smart</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- Override json-smart version range with a fixed version to avoid breaking builds -->
-        <!-- When updating oauth2-oidc-sdk, also update this version if necessary -->
-        <dependency>
-            <groupId>net.minidev</groupId>
-            <artifactId>json-smart</artifactId>
-            <version>2.3</version>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
@@ -197,49 +186,16 @@
         <tag>HEAD</tag>
     </scm>
 
-    <pluginRepositories>
-        <pluginRepository>
-            <snapshots>
+    <repositories>
+        <repository>
+            <id>oss.sonatype.org-snapshot</id>
+            <url>http://oss.sonatype.org/content/repositories/snapshots</url>
+            <releases>
                 <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
             </snapshots>
-            <id>bintray-jfrog-jfrog-jars</id>
-            <name>bintray-plugins</name>
-            <url>http://dl.bintray.com/jfrog/jfrog-jars</url>
-        </pluginRepository>
-    </pluginRepositories>
-
-    <profiles>
-        <profile>
-            <id>snapshots</id>
-            <repositories>
-                <repository>
-                    <snapshots>
-                        <enabled>true</enabled>
-                    </snapshots>
-                    <releases>
-                        <enabled>false</enabled>
-                    </releases>
-                    <id>ojo-libs-snapshot</id>
-                    <name>ojo-snapshts</name>
-                    <url>https://oss.jfrog.org/artifactory/libs-snapshot</url>
-                </repository>
-            </repositories>
-        </profile>
-        <profile>
-            <id>bintray</id>
-            <repositories>
-                <repository>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                    <releases>
-                        <enabled>true</enabled>
-                    </releases>
-                    <id>bintray-seedstack-jars</id>
-                    <name>bintray</name>
-                    <url>http://dl.bintray.com/seedstack/jars</url>
-                </repository>
-            </repositories>
-        </profile>
-    </profiles>
+        </repository>
+    </repositories>
 </project>
