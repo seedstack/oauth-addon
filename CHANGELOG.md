@@ -1,6 +1,8 @@
-# Version 3.2.0 (2021-05-05)
+# Version 3.2.0 (2021-05-06)
 
 * [fix] Properly process array claims for roles and permissions additional claims.
+* [fix] Respond with 401 HTTP code instead of 403 when access token is not present or invalid.
+* [fix] Avoid error 500 due to double response when access token is invalid.  
 * [chg] Additional roles or permissions claims are now processed regardless of the `treatScopeAsRoles` config value.
 
 # Version 3.1.0 (2021-01-06)
