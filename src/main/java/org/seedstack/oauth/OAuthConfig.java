@@ -45,7 +45,7 @@ public class OAuthConfig {
     private boolean treatScopesAsRoles = false;
     private String additionalRolesClaim;
     private String additionalPermissionsClaim;
-    private boolean returnUnauthorizedReason = true;
+    private boolean discloseUnauthorizedReason = true;
 
     public ProviderConfig provider() {
         return provider;
@@ -204,12 +204,12 @@ public class OAuthConfig {
         return this;
     }
 
-    public boolean isReturnUnauthorizedReason() {
-        return returnUnauthorizedReason;
+    public boolean isDiscloseUnauthorizedReason() {
+        return discloseUnauthorizedReason;
     }
 
-    public OAuthConfig setReturnUnauthorizedReason(boolean returnUnauthorizedReason) {
-        this.returnUnauthorizedReason = returnUnauthorizedReason;
+    public OAuthConfig setDiscloseUnauthorizedReason(boolean discloseUnauthorizedReason) {
+        this.discloseUnauthorizedReason = discloseUnauthorizedReason;
         return this;
     }
 

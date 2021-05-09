@@ -72,7 +72,7 @@ public class OAuthCallbackFilter extends AuthenticatingFilter implements Session
             try {
                 ((HttpServletResponse) response).sendError(
                         HttpServletResponse.SC_UNAUTHORIZED,
-                        OAuthUtils.formatUnauthorizedMessage(request, oauthConfig.isReturnUnauthorizedReason())
+                        OAuthUtils.formatUnauthorizedMessage(request, oauthConfig.isDiscloseUnauthorizedReason())
                 );
             } catch (IOException e1) {
                 LOGGER.debug("Unable to send {} HTTP code to client", HttpServletResponse.SC_UNAUTHORIZED, e1);
