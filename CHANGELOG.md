@@ -4,6 +4,7 @@
 * [fix] Respond with 401 HTTP code instead of 403 when access token is not present or invalid.
 * [fix] Avoid error 500 due to double response when access token is invalid.  
 * [chg] Additional roles or permissions claims are now processed regardless of the `treatScopeAsRoles` config value.
+* [new] New config option `discloseUnauthorizedReason` controls if the reason of code 401 is disclosed to the client or not.
 
 # Version 3.1.0 (2021-01-06)
 
