@@ -7,6 +7,7 @@
  */
 package org.seedstack.oauth.internal;
 
+import com.google.common.base.Strings;
 import com.nimbusds.oauth2.sdk.AuthorizationRequest;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.ResponseType;
@@ -15,6 +16,7 @@ import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.State;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
+import com.nimbusds.oauth2.sdk.token.TypelessAccessToken;
 import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
 import com.nimbusds.openid.connect.sdk.Nonce;
 import org.apache.shiro.SecurityUtils;
@@ -68,13 +70,25 @@ public class OAuthAuthenticationFilter extends AuthenticatingFilter implements S
     }
 
     private Optional<AccessToken> resolveAccessToken(HttpServletRequest request) {
-        String authorizationHeader = request.getHeader(AUTHORIZATION);
-        if (authorizationHeader != null) {
-            // Bearer access token
-            try {
-                return Optional.of(BearerAccessToken.parse(authorizationHeader));
-            } catch (ParseException e) {
-                LOGGER.debug("Unable to parse bearer access token from: " + authorizationHeader);
+        String customAccessTokenHeader = oauthConfig.getCustomAccessTokenHeader();
+        if (Strings.isNullOrEmpty(customAccessTokenHeader)) {
+            String headerValue = request.getHeader(AUTHORIZATION);
+            if (headerValue != null) {
+                // Bearer access token
+                try {
+                    return Optional.of(BearerAccessToken.parse(headerValue));
+                } catch (ParseException e) {
+                    LOGGER.debug("Unable to parse bearer access token from: " + headerValue);
+                }
+            }
+        } else {
+            String headerValue = request.getHeader(customAccessTokenHeader);
+            if (headerValue != null) {
+                try {
+                    return Optional.of(TypelessAccessToken.parse(headerValue));
+                } catch (ParseException e) {
+                    LOGGER.debug("Unable to parse typeless access token from: " + headerValue);
+                }
             }
         }
         return Optional.empty();

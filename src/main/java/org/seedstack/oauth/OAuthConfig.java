@@ -45,6 +45,7 @@ public class OAuthConfig {
     private boolean treatScopesAsRoles = false;
     private String additionalRolesClaim;
     private String additionalPermissionsClaim;
+    private String customAccessTokenHeader;
     private boolean discloseUnauthorizedReason = true;
 
     public ProviderConfig provider() {
@@ -201,6 +202,15 @@ public class OAuthConfig {
 
     public OAuthConfig setAdditionalPermissionsClaim(String additionalPermissionsClaim) {
         this.additionalPermissionsClaim = additionalPermissionsClaim;
+        return this;
+    }
+
+    public String getCustomAccessTokenHeader() {
+        return customAccessTokenHeader;
+    }
+
+    public OAuthConfig setCustomAccessTokenHeader(String customAccessTokenHeader) {
+        this.customAccessTokenHeader = customAccessTokenHeader;
         return this;
     }
 

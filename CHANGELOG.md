@@ -1,3 +1,7 @@
+# Version 3.3.0 (2021-08-30)
+
+* [new] Support custom HTTP header for access token through the `customAccessTokenHeader` configuration option.
+
 # Version 3.2.0 (2021-05-06)
 
 * [fix] Properly process array claims for roles and permissions additional claims.
