@@ -28,7 +28,7 @@ access to the user's protected resources, without necessarily revealing their lo
 
 OpenID Connect (OIDC) is an identity layer built on top of the OAuth 2.0 framework. It allows third-party applications 
 to verify the identity of the end-user and to obtain basic user profile information. OIDC uses JSON web tokens (JWTs), 
-which you can obtain using flows conforming to the OAuth 2.0 specifications. See our OIDC Handbook for more details.
+which you can obtain using flows conforming to the OAuth 2.0 specifications.
 
 {{< callout warning >}}
 OAuth2/OpenIdConnect are complex protocols. While the SeedStack OAuth add-on greatly simplifies their use in applications,
