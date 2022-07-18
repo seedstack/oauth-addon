@@ -332,8 +332,6 @@ public class OAuthServiceImpl implements OAuthService {
             	  throw new TokenValidationException("Unable to validate the access token (HTTP status " 
             + userInfoResponse.toErrorResponse().getErrorObject().getHTTPStatusCode() + "): " +
             			  userInfoResponse.toErrorResponse().getErrorObject().getDescription());
-                //LOGGER.warn("Unable to fetch user info: {}", OAuthUtils.buildGenericError(((ErrorResponse) userInfoResponse)).getDescription());
-               // return Optional.empty();
             }
         }
         return Optional.empty();
