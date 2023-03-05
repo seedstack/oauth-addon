@@ -23,6 +23,7 @@ import java.util.Set;
 public class OAuthConfig {
     @NotNull
     private ProviderConfig provider = new ProviderConfig();
+    private RetrieverConfig retriever = new RetrieverConfig();
     @NotNull
     private AlgorithmConfig algorithms = new AlgorithmConfig();
     private URI discoveryDocument;
@@ -223,7 +224,15 @@ public class OAuthConfig {
         return this;
     }
 
-    @Config("provider")
+    public RetrieverConfig getRetriever() {
+		return retriever;
+	}
+
+	public void setRetriever(RetrieverConfig retriever) {
+		this.retriever = retriever;
+	}
+
+	@Config("provider")
     public static class ProviderConfig {
         private URI authorization;
         private URI token;
@@ -317,5 +326,24 @@ public class OAuthConfig {
             this.plainTokenAllowed = plainTokenAllowed;
             return this;
         }
+    }
+    @Config("retriever")
+    public static class RetrieverConfig {
+        private String connectTimeout;
+        private String readTimeout;
+		public String getConnectTimeout() {
+			return connectTimeout;
+		}
+		public void setConnectTimeout(String connectTimeout) {
+			this.connectTimeout = connectTimeout;
+		}
+		public String getReadTimeout() {
+			return readTimeout;
+		}
+		public void setReadTimeout(String readTimeout) {
+			this.readTimeout = readTimeout;
+		}
+       
+
     }
 }

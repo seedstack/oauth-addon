@@ -16,6 +16,7 @@ import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jose.proc.JWSKeySelector;
 import com.nimbusds.jose.proc.JWSVerificationKeySelector;
 import com.nimbusds.jose.proc.SecurityContext;
+import com.nimbusds.jose.util.DefaultResourceRetriever;
 import com.nimbusds.jwt.*;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
@@ -178,14 +179,11 @@ public class OAuthServiceImpl implements OAuthService {
 
         // Signing key selector
         oauthProvider.getJwksEndpoint().ifPresent(jwksEndpoint -> {
-            try {
-                JWKSource<SecurityContext> keySource = new RemoteJWKSet<>(jwksEndpoint.toURL());
+                JWKSource<SecurityContext> keySource = getkeySource(jwksEndpoint);
                 JWSAlgorithm expectedAlg = JWSAlgorithm.parse(oauthConfig.algorithms().getAccessSigningAlgorithm());
                 JWSKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(expectedAlg, keySource);
                 jwtProcessor.setJWSKeySelector(keySelector);
-            } catch (MalformedURLException e) {
-                throw new TokenValidationException("Invalid JWKS endpoint: " + e.getMessage());
-            }
+           
         });
 
         // Claims verification
@@ -218,6 +216,24 @@ public class OAuthServiceImpl implements OAuthService {
         } catch (BadJOSEException | JOSEException e) {
             throw new TokenValidationException("Unable to validate JWT access token: " + e.getMessage(), e);
         }
+    }
+    
+    private JWKSource<SecurityContext> getkeySource(URI jwksEndpoint){
+    	try {
+    		JWKSource<SecurityContext> keySource = new RemoteJWKSet<>(jwksEndpoint.toURL());
+    		String connectTimeout =oauthConfig.getRetriever().getConnectTimeout();
+    		String readTimeOut=oauthConfig.getRetriever().getReadTimeout();
+    			if(connectTimeout!=null && ! connectTimeout.equals("") &&
+    					readTimeOut!=null && ! readTimeOut.equals("")) {
+    				DefaultResourceRetriever defaultResourceRetriever= 
+    	        			new DefaultResourceRetriever(Integer.parseInt(connectTimeout),
+    	        					Integer.parseInt(readTimeOut));
+    				keySource = new RemoteJWKSet<>(jwksEndpoint.toURL(),defaultResourceRetriever);
+    			}
+    			return keySource;
+			} catch (MalformedURLException e) {
+				 throw new TokenValidationException("Invalid JWKS endpoint: " + e.getMessage());
+			}
     }
 
     private JWTClaimsSet validateOpaqueAccessToken(AccessToken accessToken) {
@@ -313,8 +329,9 @@ public class OAuthServiceImpl implements OAuthService {
             if (userInfoResponse.indicatesSuccess()) {
                 return Optional.of(((UserInfoSuccessResponse) userInfoResponse).getUserInfo());
             } else {
-                LOGGER.warn("Unable to fetch user info: {}", OAuthUtils.buildGenericError(((ErrorResponse) userInfoResponse)).getDescription());
-                return Optional.empty();
+            	  throw new TokenValidationException("Unable to validate the access token (HTTP status " 
+            + userInfoResponse.toErrorResponse().getErrorObject().getHTTPStatusCode() + "): " +
+            			  userInfoResponse.toErrorResponse().getErrorObject().getDescription());
             }
         }
         return Optional.empty();
