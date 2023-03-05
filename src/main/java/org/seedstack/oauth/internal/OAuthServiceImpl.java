@@ -223,8 +223,8 @@ public class OAuthServiceImpl implements OAuthService {
     		JWKSource<SecurityContext> keySource = new RemoteJWKSet<>(jwksEndpoint.toURL());
     		String connectTimeout =oauthConfig.getRetriever().getConnectTimeout();
     		String readTimeOut=oauthConfig.getRetriever().getReadTimeout();
-    			if(connectTimeout!=null &&connectTimeout!="" &&
-    					readTimeOut!=null && readTimeOut!="") {
+    			if(connectTimeout!=null && ! connectTimeout.equals("") &&
+    					readTimeOut!=null && ! readTimeOut.equals("")) {
     				DefaultResourceRetriever defaultResourceRetriever= 
     	        			new DefaultResourceRetriever(Integer.parseInt(connectTimeout),
     	        					Integer.parseInt(readTimeOut));
